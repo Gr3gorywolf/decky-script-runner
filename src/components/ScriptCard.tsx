@@ -14,14 +14,19 @@ interface props {
 export const ScriptCard: FC<props> = ({ isRunning, script }) => {
   const containerStyle = {
     display: "flex",
-    alignItems: "center",
-    padding: "4px",
+    flexDirection: "row",
+    padding: "5px",
     border: "1px solid #ccc",
     borderRadius: "4px",
     maxWidth: "320px",
     margin: "4px auto",
     fontSize: "6px",
-  };
+  } as React.CSSProperties;
+
+  const containerInfoStyle = {
+    display: "flex",
+    flexDirection: "row",
+  } as React.CSSProperties;
 
   const imageStyle = {
     width: "40px",
@@ -53,16 +58,18 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
 
   const buttonContainerStyle = {
     display: "flex",
-    flexDirection: "column" as const,
-    justifyContent: "center",
-    marginLeft: "4px",
-    gap: "3px",
+    flexDirection: "row" as const,
+    margin: "5px",
+    marginLeft: "auto",
+    gap: "4px",
   };
 
   const buttonStyle = {
-    width: "35px",
-    height: "35px",
-    maxWidth: "35px !important",
+    minWidth: 0,
+    padding: "6px",
+    width: "28px",
+    height: "28px",
+    maxWidth: "23px !important",
   };
 
   const getImageByLanguage = () => {
@@ -87,26 +94,29 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
 
   return (
     <div style={containerStyle}>
-      <img src={getImageByLanguage()} alt="Author" style={imageStyle} />
-      <div style={contentStyle}>
-        <h2 style={nameStyle}>{humanizeFileName(script.name)}</h2>
-        {script.author && <p style={authorStyle}>{script.author}</p>}
-        {script.description && <p style={descriptionStyle}>{script.description}</p>}
+      <div style={containerInfoStyle}>
+        <img src={getImageByLanguage()} alt="Author" style={imageStyle} />
+        <div style={contentStyle}>
+          <h2 style={nameStyle}>{humanizeFileName(script.name)}</h2>
+          {script.author && <p style={authorStyle}>{script.author}</p>}
+          {script.description && <p style={descriptionStyle}>{script.description}</p>}
+        </div>
       </div>
 
-      <div style={buttonContainerStyle}>
-        <DialogButton style={buttonStyle} focusable  onClick={() => {}}>
-          <MdDelete />
+      <Focusable flow-children="horizontal" style={buttonContainerStyle}>
+        <DialogButton focusable style={buttonStyle} onClick={handleToggleRunningScript}>
+          {isRunning ? <MdStop /> : <MdPlayArrow />}
         </DialogButton>
+
         {isRunning && (
-          <DialogButton style={buttonStyle} focusable onClick={showDetailsModal}>
+          <DialogButton style={buttonStyle} onClick={showDetailsModal}>
             <MdTerminal />
           </DialogButton>
         )}
-        <DialogButton style={buttonStyle} focusable onClick={handleToggleRunningScript}>
-          {isRunning ? <MdStop /> : <MdPlayArrow />}
+        <DialogButton style={buttonStyle} onClick={() => {}}>
+          <MdDelete />
         </DialogButton>
-      </div>
+      </Focusable>
     </div>
   );
 };

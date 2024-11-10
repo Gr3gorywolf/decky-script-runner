@@ -1,3 +1,4 @@
+import pty
 import subprocess
 import os
 import json
@@ -51,21 +52,22 @@ def get_script_infos():
     
     return file_infos
 
-def enqueue_process_output(stream, log_file):
-    """Enqueue the output from the stream (stdout or stderr) into a queue."""
-    text = stream.readline()
-    if not text: 
-        return 
-    log_file.write(text)
-    log_file.flush()
-
-
-def process_output_thread(process, log_file):
-    while True:
-        enqueue_process_output(process.stdout, log_file)
-        enqueue_process_output(process.stderr, log_file)
-        if process.poll() is None:
-            break
+def monitor_process_from_fd(master_fd,slave_fd,process, log_file_path):
+    with open(log_file_path, 'w', buffering=1) as log_file:
+        while True:
+            try:
+                output = os.read(master_fd, 1024).decode()
+                if output:
+                    log_file.write(output)
+                    log_file.flush()
+                
+                if process.poll() is not None:
+                    break
+            except OSError:
+                break
+    
+    os.close(master_fd)
+    os.close(slave_fd)
 class Plugin:
     async def _main(self):
         decky.logger.info("Decky Script Loader plugin loaded.")
@@ -150,19 +152,18 @@ class Plugin:
         # Delete existing log file if it exists
         if os.path.exists(log_file_path):
             os.remove(log_file_path)
-        
-        # Open log file for writing
-        log_file = open(log_file_path, 'w', buffering=1)
+        master_fd, slave_fd = pty.openpty()
 
         # Run the script using the determined interpreter and redirect stdout and stderr to the log file
         process = subprocess.Popen(
             ["stdbuf", "-oL", interpreter, script_path],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True
+            stdout=slave_fd,
+            stderr=slave_fd,
+            text=True,
+            close_fds=True
         )
         running_scripts_map[script_name] = process    
-        thread = threading.Thread(target=process_output_thread, args=(process, log_file))
+        thread = threading.Thread(target=monitor_process_from_fd, args=(master_fd,slave_fd,process, log_file_path))
 
         # Start the threads
         thread.start()
@@ -218,12 +219,9 @@ class Plugin:
     async def get_running_scripts(self):
         """Returns a map of running scripts with their process handles."""
         running_processes = []
-        for script_name, process in running_scripts_map.items():
+        for script_name, process in list(running_scripts_map.items()):
             if process.poll() is None:  # If the process is still running
                 running_processes.append(script_name)
-            else:
-                # Remove from map if the process is no longer running
-                del running_scripts_map[script_name]
         return running_processes
 
     async def check_and_cleanup_finished_scripts(self):

@@ -54,6 +54,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "text/plain")
                     self.end_headers()
                     self.wfile.write(file_content.encode())
+            # Handle requests to fetch script files
+        elif self.path.startswith("/script/"):
+            file_name = self.path[len("/script/"):]  # Extract file name after "/script/"
+            file_path = os.path.join(SCRIPTS_DIR, file_name)
+            if os.path.exists(file_path):
+                with open(file_path, 'r') as file:
+                    file_content = file.read()
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/plain")
+                    self.end_headers()
+                    self.wfile.write(file_content.encode())
+            else:
+                self.send_error(404, "File not found")
         else:
             file_info = get_script_infos()
             self.send_response(200)
@@ -140,8 +153,9 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 return
 
             # Update the file content
-            with open(file_path, 'w') as file:
-                file.write(content)
+            if content is not None:
+                with open(file_path, 'w') as file:
+                    file.write(content)
             
             # Update metadata in the JSON file
             metadata = {
