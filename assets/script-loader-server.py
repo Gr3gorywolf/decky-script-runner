@@ -42,6 +42,10 @@ def get_script_infos():
     return file_infos   
 
 class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_OPTIONS(self):
+        """Handle OPTIONS requests for CORS preflight."""
+        self.send_response(200)
+        self.end_headers()
     def do_GET(self):
         """Handle GET requests to list files and their metadata."""
         if(self.path.startswith("/logs")):
@@ -133,10 +137,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         try:
             data = json.loads(post_data)
             file_name = data.get("name")
-            content = data.get("content", "")
+            content = data.get("content", None)
             description = data.get("description", "")
             language = data.get("language", "")
-            author = data.get("author", "")  # Optional field
+            author = data.get("author", "")
 
             if not file_name:
                 raise ValueError("File name is missing")
@@ -199,10 +203,18 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
+
+class CORSHandler(SimpleHTTPRequestHandler):
+    def send_response(self, *args, **kwargs):
+        SimpleHTTPRequestHandler.send_response(self, *args, **kwargs)
+        self.send_header("Access-Control-Allow-Origin", "*")
+        self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+
 def start_server():
     """Start the server using asyncio and threading."""
     server_address = ('', 9696)
-    httpd = ThreadedHTTPServer(server_address, SimpleHTTPRequestHandler)
+    httpd = ThreadedHTTPServer(server_address, CORSHandler)
     httpd.serve_forever()
 
 

@@ -98,7 +98,9 @@ class Plugin:
         
         global server_process
         server_process = subprocess.Popen(
-            ["python3", SERVER_SCRIPT_PATH]
+            ["python3", SERVER_SCRIPT_PATH],
+            stderr=None,
+            stdout=None,
         )
         await decky.emit("server_status_change",True)
         decky.logger.info("Server started with PID: " + str(server_process.pid))
@@ -139,6 +141,10 @@ class Plugin:
             interpreter = "python3"
         elif extension == '.sh':
             interpreter = "bash"
+        elif extension == '.lua':
+            interpreter = "lua"
+        elif extension == '.pl':
+            interpreter = "perl"
         else:
             return f"Unsupported script type: {extension}"
         

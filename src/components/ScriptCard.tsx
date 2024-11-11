@@ -77,7 +77,9 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
       py: "https://github.com/devicons/devicon/raw/refs/heads/master/icons/python/python-original.svg",
       sh: "https://github.com/devicons/devicon/raw/refs/heads/master/icons/bash/bash-original.svg",
       js: "https://raw.githubusercontent.com/devicons/devicon/refs/heads/master/icons/nodejs/nodejs-original.svg",
-      unknown: "https://github.com/devicons/devicon/raw/refs/heads/master/icons/bash/bash-original.svg",
+      lua:"https://raw.githubusercontent.com/devicons/devicon/refs/heads/master/icons/lua/lua-original.svg",
+      perl:"https://raw.githubusercontent.com/devicons/devicon/refs/heads/master/icons/perl/perl-original.svg",
+      unknown: "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/refs/heads/6.x/svgs/solid/code.svg",
     };
     //@ts-ignore
     const foundImage = languageImages[script.language] ?? languageImages.unknown;
