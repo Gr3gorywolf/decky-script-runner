@@ -1,60 +1,105 @@
+import re
 import os
 import json
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, SimpleHTTPRequestHandler
 import socket
 from socketserver import ThreadingMixIn
-import ssl
+
+# Constants
 PLUGIN_DIR = "/home/deck/homebrew/plugins/decky-script-runner"
 SCRIPTS_DIR = "/home/deck/homebrew/data/decky-script-runner/scripts"
-#SCRIPTS_DIR = "./uploads"  # Directory to store files
+#SCRIPTS_DIR = "./uploads"  # Directory to store script files
+METADATA_FILE = os.path.join(SCRIPTS_DIR, "metadata.json")
 
-# Ensure the upload directory exists
+# Ensure upload directory exists
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
-httpd = None
-
 
 def clear_script_content(content):
     if(content is None):
         return None
     return content.replace('\r\n', '\n').replace('\r', '').strip()
 
-def get_script_infos(): 
-    files = os.listdir(SCRIPTS_DIR)
-    file_infos = []
-    
-    for file_name in files:
+def parse_metadata(file_path):
+    """
+    Parse the metadata from the top of a script file, or set default values if metadata is missing.
+    """
+    metadata = {}
+    file_name = os.path.basename(file_path)
+    file_title = os.path.splitext(file_name)[0].replace("_", " ").replace("-", " ").title()
+    file_extension = os.path.splitext(file_name)[1][1:]
+    validKeys = ["title", "language", "version", "author", "root", "description", "image"]
+
+    with open(file_path, 'r') as f:
+        content = f.read()
+        # Find metadata section using regex
+        metadata_match = re.search(r"----------metadata---------\n(.+?)\n----------metadata---------", content, re.DOTALL)
+        if metadata_match:
+            # Parse metadata if found
+            for line in metadata_match.group(1).splitlines():
+                key, value = line.split(":", 1)
+                if key.strip() in validKeys:
+                    if key.strip() == "root":
+                        metadata[key.strip()] = value.strip().lower() == "true"
+                    else:
+                        metadata[key.strip()] = value.strip()
+
+    # Set default values for missing metadata fields
+    metadata.setdefault("title", file_title)  # Humanized file name
+    metadata.setdefault("language", file_extension)  # File extension as language
+    metadata.setdefault("version", "0.0.0")
+    metadata.setdefault("author", "unknown")
+    metadata.setdefault("root", False)
+    metadata.setdefault("description", "")
+    metadata.setdefault("image", "")
+    return metadata
+
+def compile_metadata():
+    """
+    Compile metadata from all script files in SCRIPTS_DIR and save to METADATA_FILE.
+    Only reparse files whose last modification time has changed.
+    """
+    # Load existing metadata if available
+    if os.path.exists(METADATA_FILE):
+        with open(METADATA_FILE, 'r') as f:
+            try:
+                existing_metadata = {item['name']: item for item in json.load(f)}
+            except json.JSONDecodeError:
+                existing_metadata = {}
+    else:
+        existing_metadata = {}
+
+    metadata_list = []
+    for file_name in os.listdir(SCRIPTS_DIR):
         file_path = os.path.join(SCRIPTS_DIR, file_name)
-        
-        # Skip metadata JSON files
         if file_name.endswith('.json') or not os.path.isfile(file_path):
             continue
-        
-        # Get the base name and extension without the dot
-        
-        # Set up initial file data
-        file_data = {"name": file_name}
-        extension = os.path.splitext(file_name)
-        # Set language as the extension without the dot
-        language = extension[1:] if extension else 'Unknown'
-        file_data['language'] = language
-        
-        # Check for associated metadata
-        metadata_path = f"{file_path}.json"
-        if os.path.exists(metadata_path):
-            with open(metadata_path, 'r') as metadata_file:
-                metadata = json.load(metadata_file)
-                file_data.update(metadata)
-        
-        file_infos.append(file_data)
-    
-    return file_infos   
 
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+        # Get the last modification time of the file
+        mtime = os.path.getmtime(file_path)
+
+        # Check if we need to reparse metadata based on mtime
+        if (file_name in existing_metadata and 
+            existing_metadata[file_name].get("mtime") == mtime):
+            # Use existing metadata entry if mtime matches
+            metadata_list.append(existing_metadata[file_name])
+        else:
+            # Parse metadata and add mtime if the file has been modified
+            metadata = parse_metadata(file_path)
+            metadata["name"] = file_name
+            metadata["mtime"] = mtime
+            metadata_list.append(metadata)
+        # Save the updated metadata list
+        with open(METADATA_FILE, 'w') as f:
+            json.dump(metadata_list, f, indent=4)
+    return metadata_list
+
+class ScriptHandler(BaseHTTPRequestHandler):
     def do_OPTIONS(self):
         """Handle OPTIONS requests for CORS preflight."""
         self.send_response(200)
         self.end_headers()
         self.wfile.write("ok".encode())
+
     def do_GET(self):
         """Handle GET requests to list files and their metadata."""
         if(self.path == "/status"):
@@ -86,11 +131,11 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             else:
                 self.send_error(404, "File not found")
         elif self.path == "/scripts":
-            file_info = get_script_infos()
+            metadata_content = compile_metadata()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps(file_info).encode())
+            self.wfile.write(json.dumps(metadata_content).encode())
         else:
             deviceIp = socket.gethostbyname(socket.gethostname())
             with open(PLUGIN_DIR + "/assets/sideloader/index.html", 'r') as sideloader_file:
@@ -102,75 +147,47 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.wfile.write(file_content.encode())
 
     def do_POST(self):
-        """Handle POST requests to create a new file with metadata."""
-        content_length = int(self.headers['Content-Length'])
-        post_data = self.rfile.read(content_length)
-        
-        try:
-            data = json.loads(post_data)
-            file_name = data.get("name")
-            content = data.get("content", "")
-            description = data.get("description", "")
-            language = data.get("language", "")
-            author = data.get("author", "")  # Optional field
+        """
+        Handle POST request: save new script and recompile metadata.
+        """
+        file_length = int(self.headers['Content-Length'])
+        file_data = self.rfile.read(file_length).decode('utf-8')
+        data = json.loads(file_data)
+        file_name = data.get("name")
+        content = data.get("content", "")
 
-            if not file_name:
-                raise ValueError("File name is missing")
-
-            file_path = os.path.join(SCRIPTS_DIR, file_name)
-            metadata_path = f"{file_path}.json"
-            
-            # Check if the file already exists
-            if os.path.exists(file_path):
-                self.send_response(409)
-                self.send_header("Content-Type", "application/json")
-                self.end_headers()
-                self.wfile.write(json.dumps({"error": "File with this name already exists"}).encode())
-                return
-
-            # Write the file content
-            with open(file_path, 'w') as file:
-                file.write(clear_script_content(content))
-            
-            # Save metadata in a JSON file
-            metadata = {
-                "description": description,
-                "language": language,
-                "author": author  # Add author to metadata
-            }
-            with open(metadata_path, 'w') as metadata_file:
-                json.dump(metadata, metadata_file)
-            
-            self.send_response(201)
+        if not file_name:
+            raise ValueError("File name is missing")
+        # Check if the file already exists
+        if os.path.exists(file_path):
+            self.send_response(409)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"message": "File created", "file": file_name}).encode())
+            self.wfile.write(json.dumps({"error": "File with this name already exists"}).encode())
+            return
+        file_path = os.path.join(SCRIPTS_DIR, file_name)
+        with open(file_path, 'w') as f:
+            f.write(content)
 
-        except (json.JSONDecodeError, ValueError) as e:
-            self.send_response(400)
-            self.send_header("Content-Type", "application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps({"error": str(e)}).encode())
+        # Recompile metadata on any new script addition
+        compile_metadata()
+
+        self.send_response(201)
+        self.end_headers()
 
     def do_PUT(self):
         """Handle PUT requests to update an existing file's content and metadata."""
         content_length = int(self.headers['Content-Length'])
         post_data = self.rfile.read(content_length)
-        
         try:
             data = json.loads(post_data)
             file_name = data.get("name")
-            content = data.get("content", None)
-            description = data.get("description", "")
-            language = data.get("language", "")
-            author = data.get("author", "")
+            content = data.get("content", "")
 
             if not file_name:
                 raise ValueError("File name is missing")
 
             file_path = os.path.join(SCRIPTS_DIR, file_name)
-            metadata_path = f"{file_path}.json"
-            
             # Check if the file exists
             if not os.path.exists(file_path):
                 self.send_response(404)
@@ -180,19 +197,10 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                 return
 
             # Update the file content
-            if content is not None:
-                with open(file_path, 'w') as file:
-                    file.write(clear_script_content(content))
-            
+            with open(file_path, 'w') as file:
+                file.write(clear_script_content(content))
             # Update metadata in the JSON file
-            metadata = {
-                "description": description,
-                "language": language,
-                "author": author  # Add/Update author in metadata
-            }
-            with open(metadata_path, 'w') as metadata_file:
-                json.dump(metadata, metadata_file)
-            
+            compile_metadata()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
@@ -208,12 +216,8 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """Handle DELETE requests to remove a file and its metadata."""
         file_name = self.path.strip("/")
         file_path = os.path.join(SCRIPTS_DIR, file_name)
-        metadata_path = f"{file_path}.json"
-        
         if os.path.exists(file_path):
             os.remove(file_path)
-            if os.path.exists(metadata_path):
-                os.remove(metadata_path)
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
@@ -224,16 +228,19 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(json.dumps({"error": "File not found"}).encode())
 
+
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
     """Handle requests in a separate thread."""
 
-class CORSHandler(SimpleHTTPRequestHandler):
+
+class CORSHandler(ScriptHandler):
     def send_response(self, *args, **kwargs):
-        SimpleHTTPRequestHandler.send_response(self, *args, **kwargs)
+        ScriptHandler.send_response(self, *args, **kwargs)
         self.send_header("Access-Control-Allow-Origin", "*")
         self.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         self.send_header("Access-Control-Allow-Headers", "Content-Type")
 
+# Setting up the HTTP server
 def start_server():
     """Start the server using asyncio and threading."""
     server_address = ('', 9696)

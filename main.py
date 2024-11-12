@@ -1,4 +1,5 @@
 import pty
+import re
 import socket
 import subprocess
 import os
@@ -16,42 +17,85 @@ os.makedirs(SCRIPTS_DIR, exist_ok=True)
 LOG_DIR = SCRIPTS_DIR + "/logs"
 # Path to the script that will act as the server
 SERVER_SCRIPT_PATH = decky.DECKY_PLUGIN_DIR + "/assets/script-loader-server.py"
+METADATA_FILE = os.path.join(SCRIPTS_DIR, "metadata.json")
 # This will hold the process reference for the running script (if any)
 server_process = None
 running_scripts_map = {}
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
-def get_script_infos(): 
-    files = os.listdir(SCRIPTS_DIR)
-    file_infos = []
-    
-    for file_name in files:
+def parse_metadata(file_path):
+    """
+    Parse the metadata from the top of a script file, or set default values if metadata is missing.
+    """
+    metadata = {}
+    file_name = os.path.basename(file_path)
+    file_title = os.path.splitext(file_name)[0].replace("_", " ").replace("-", " ").title()
+    file_extension = os.path.splitext(file_name)[1][1:]
+    validKeys = ["title", "language", "version", "author", "root", "description", "image"]
+
+    with open(file_path, 'r') as f:
+        content = f.read()
+        # Find metadata section using regex
+        metadata_match = re.search(r"----------metadata---------\n(.+?)\n----------metadata---------", content, re.DOTALL)
+        if metadata_match:
+            # Parse metadata if found
+            for line in metadata_match.group(1).splitlines():
+                key, value = line.split(":", 1)
+                if key.strip() in validKeys:
+                    if key.strip() == "root":
+                        metadata[key.strip()] = value.strip().lower() == "true"
+                    else:
+                        metadata[key.strip()] = value.strip()
+
+    # Set default values for missing metadata fields
+    metadata.setdefault("title", file_title)  # Humanized file name
+    metadata.setdefault("language", file_extension)  # File extension as language
+    metadata.setdefault("version", "0.0.0")
+    metadata.setdefault("author", "unknown")
+    metadata.setdefault("root", False)
+    metadata.setdefault("description", "")
+    metadata.setdefault("image", "")
+    return metadata
+
+def compile_metadata():
+    """
+    Compile metadata from all script files in SCRIPTS_DIR and save to METADATA_FILE.
+    Only reparse files whose last modification time has changed.
+    """
+    # Load existing metadata if available
+    if os.path.exists(METADATA_FILE):
+        with open(METADATA_FILE, 'r') as f:
+            try:
+                existing_metadata = {item['name']: item for item in json.load(f)}
+            except json.JSONDecodeError:
+                existing_metadata = {}
+    else:
+        existing_metadata = {}
+
+    metadata_list = []
+    for file_name in os.listdir(SCRIPTS_DIR):
         file_path = os.path.join(SCRIPTS_DIR, file_name)
-        
-        # Skip metadata JSON files
         if file_name.endswith('.json') or not os.path.isfile(file_path):
             continue
-        
-        # Get the base name and extension without the dot
-        extension = os.path.splitext(file_name)
-        
-        # Set up initial file data
-        file_data = {"name": file_name}
-        
-        # Set language as the extension without the dot
-        language = extension[1:] if extension else 'Unknown'
-        file_data['language'] = language
-        
-        # Check for associated metadata
-        metadata_path = f"{file_path}.json"
-        if os.path.exists(metadata_path):
-            with open(metadata_path, 'r') as metadata_file:
-                metadata = json.load(metadata_file)
-                file_data.update(metadata)  # Add metadata to the file info
-        
-        file_infos.append(file_data)
-    
-    return file_infos
+
+        # Get the last modification time of the file
+        mtime = os.path.getmtime(file_path)
+
+        # Check if we need to reparse metadata based on mtime
+        if (file_name in existing_metadata and 
+            existing_metadata[file_name].get("mtime") == mtime):
+            # Use existing metadata entry if mtime matches
+            metadata_list.append(existing_metadata[file_name])
+        else:
+            # Parse metadata and add mtime if the file has been modified
+            metadata = parse_metadata(file_path)
+            metadata["name"] = file_name
+            metadata["mtime"] = mtime
+            metadata_list.append(metadata)
+        # Save the updated metadata list
+        with open(METADATA_FILE, 'w') as f:
+            json.dump(metadata_list, f, indent=4)
+    return metadata_list
 
 def monitor_process_from_fd(master_fd,slave_fd,process, log_file_path):
     with open(log_file_path, 'w', buffering=1) as log_file:
@@ -78,7 +122,7 @@ class Plugin:
         await self.stop_server()
     
     async def get_scripts_data(self):
-        script_infos = get_script_infos()
+        script_infos = compile_metadata()
         return json.dumps(script_infos)
 
     async def get_device_ip(self):

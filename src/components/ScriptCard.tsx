@@ -2,7 +2,6 @@ import { Focusable, DialogButton, showModal } from "@decky/ui";
 import { MdTerminal, MdPlayArrow, MdStop, MdDelete } from "react-icons/md";
 import { ScriptData } from "../types/script-data";
 import React, { FC } from "react";
-import { humanizeFileName } from "../utils/helpers";
 import { call } from "@decky/api";
 import { ScriptConsoleModal } from "./ScriptConsoleModal";
 import { BashOriginal, LuaOriginal, NodejsOriginal, PerlOriginal, PhpOriginal, PythonOriginal, RubyOriginal } from "devicons-react";
@@ -107,7 +106,7 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
       <div style={containerInfoStyle}>
         <ImageByLanguage size={40} style={imageStyle}  />
         <div style={contentStyle}>
-          <h2 style={nameStyle}>{humanizeFileName(script.name)}</h2>
+          <h2 style={nameStyle}>{script.title}</h2>
           {script.author && <p style={authorStyle}>{script.author}</p>}
           {script.description && <p style={descriptionStyle}>{script.description}</p>}
         </div>
