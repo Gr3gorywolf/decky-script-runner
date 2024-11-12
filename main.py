@@ -1,4 +1,5 @@
 import pty
+import socket
 import subprocess
 import os
 import json
@@ -79,6 +80,9 @@ class Plugin:
     async def get_scripts_data(self):
         script_infos = get_script_infos()
         return json.dumps(script_infos)
+
+    async def get_device_ip(self):
+        return socket.gethostbyname(socket.gethostname())
     
     ## SideLoading Server API
     async def is_server_running(self):
@@ -99,8 +103,8 @@ class Plugin:
         global server_process
         server_process = subprocess.Popen(
             ["python3", SERVER_SCRIPT_PATH],
-            stderr=None,
-            stdout=None,
+            stderr=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
         )
         await decky.emit("server_status_change",True)
         decky.logger.info("Server started with PID: " + str(server_process.pid))

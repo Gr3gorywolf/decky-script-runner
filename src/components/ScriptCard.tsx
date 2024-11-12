@@ -1,10 +1,15 @@
 import { Focusable, DialogButton, showModal } from "@decky/ui";
 import { MdTerminal, MdPlayArrow, MdStop, MdDelete } from "react-icons/md";
 import { ScriptData } from "../types/script-data";
-import { FC } from "react";
+import React, { FC } from "react";
 import { humanizeFileName } from "../utils/helpers";
 import { call } from "@decky/api";
 import { ScriptConsoleModal } from "./ScriptConsoleModal";
+import { BashOriginal, LuaOriginal, NodejsOriginal, PerlOriginal, PythonOriginal } from "devicons-react";
+
+interface ImageProps extends React.SVGProps<SVGElement> {
+  size?: number | string;
+}
 
 interface props {
   script: ScriptData;
@@ -16,16 +21,16 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
     display: "flex",
     flexDirection: "row",
     padding: "5px",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
     maxWidth: "320px",
-    margin: "4px auto",
+    margin: "6px auto",
+    borderBottom:"1px solid #262D35",
     fontSize: "6px",
   } as React.CSSProperties;
 
   const containerInfoStyle = {
     display: "flex",
     flexDirection: "row",
+    alignItems: "center",
   } as React.CSSProperties;
 
   const imageStyle = {
@@ -39,7 +44,7 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
   };
 
   const nameStyle = {
-    fontSize: "12px",
+    fontSize: "10px",
     fontWeight: "bold",
     margin: "0 0 1px 0",
   };
@@ -59,6 +64,7 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
   const buttonContainerStyle = {
     display: "flex",
     flexDirection: "row" as const,
+    alignItems: "center",
     margin: "5px",
     marginLeft: "auto",
     gap: "4px",
@@ -72,14 +78,14 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
     maxWidth: "23px !important",
   };
 
-  const getImageByLanguage = () => {
+  const ImageByLanguage:React.FunctionComponent<ImageProps> = (props) => {
     const languageImages = {
-      py: "https://github.com/devicons/devicon/raw/refs/heads/master/icons/python/python-original.svg",
-      sh: "https://github.com/devicons/devicon/raw/refs/heads/master/icons/bash/bash-original.svg",
-      js: "https://raw.githubusercontent.com/devicons/devicon/refs/heads/master/icons/nodejs/nodejs-original.svg",
-      lua:"https://raw.githubusercontent.com/devicons/devicon/refs/heads/master/icons/lua/lua-original.svg",
-      perl:"https://raw.githubusercontent.com/devicons/devicon/refs/heads/master/icons/perl/perl-original.svg",
-      unknown: "https://raw.githubusercontent.com/FortAwesome/Font-Awesome/refs/heads/6.x/svgs/solid/code.svg",
+      py: <PythonOriginal {...props}/>,
+      sh: <BashOriginal {...props}/>,
+      js: <NodejsOriginal {...props}/>,
+      lua:<LuaOriginal {...props}/>,
+      perl:<PerlOriginal {...props}/>,
+      unknown: <BashOriginal {...props}/>,
     };
     //@ts-ignore
     const foundImage = languageImages[script.language] ?? languageImages.unknown;
@@ -97,7 +103,7 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
   return (
     <div style={containerStyle}>
       <div style={containerInfoStyle}>
-        <img src={getImageByLanguage()} alt="Author" style={imageStyle} />
+        <ImageByLanguage size={40} style={imageStyle}  />
         <div style={contentStyle}>
           <h2 style={nameStyle}>{humanizeFileName(script.name)}</h2>
           {script.author && <p style={authorStyle}>{script.author}</p>}

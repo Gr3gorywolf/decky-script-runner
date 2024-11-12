@@ -73,7 +73,7 @@ export const ScriptConsoleModal: FC<props> = ({ closeModal, script }) => {
       <div style={consoleStyle} ref={containerRef}>
         {consoleOutput.map((line, index) => (
           <div key={index} style={lineStyle}>
-            <span style={promptStyle}>{`[${script.name}]:`}</span>
+            <span style={promptStyle}>{`/>`}</span>
             <span style={infoStyle}>{line}</span>
           </div>
         ))}

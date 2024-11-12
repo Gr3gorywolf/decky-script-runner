@@ -1,10 +1,10 @@
 {
   "name": "Decky Script Loader",
   "author": "John Doe",
-  "flags": [],
+  "flags": ["debug"],
   "api_version": 1,
   "publish": {
-    "tags": ["scripting", "loader", "decky", ""],
+    "tags": ["scripting", "loader", "decky"],
     "description": "A script loader for Decky that support multiple languages and formats.",
     "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
   }

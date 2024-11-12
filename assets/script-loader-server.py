@@ -1,6 +1,7 @@
 import os
 import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
+import socket
 from socketserver import ThreadingMixIn
 SCRIPTS_DIR = "/home/deck/homebrew/data/decky-script-runner/scripts"
 #SCRIPTS_DIR = "./uploads"  # Directory to store files
@@ -9,6 +10,11 @@ SCRIPTS_DIR = "/home/deck/homebrew/data/decky-script-runner/scripts"
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 httpd = None
 
+
+def clear_script_content(content):
+    if(content is None):
+        return None
+    return content.replace('\r\n', '\n').replace('\r', '').strip()
 
 def get_script_infos(): 
     files = os.listdir(SCRIPTS_DIR)
@@ -46,9 +52,15 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
         """Handle OPTIONS requests for CORS preflight."""
         self.send_response(200)
         self.end_headers()
+        self.wfile.write("ok".encode())
     def do_GET(self):
         """Handle GET requests to list files and their metadata."""
-        if(self.path.startswith("/logs")):
+        if(self.path == "/status"):
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write("ok".encode())
+        elif(self.path.startswith("/logs")):
             file_name = self.path.strip("/") + ".log"
             file_path = os.path.join(SCRIPTS_DIR, file_name)
             if(os.path.exists(file_path)):
@@ -71,12 +83,17 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                     self.wfile.write(file_content.encode())
             else:
                 self.send_error(404, "File not found")
-        else:
+        elif self.path == "/scripts":
             file_info = get_script_infos()
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
             self.wfile.write(json.dumps(file_info).encode())
+        else:
+            deviceIp = socket.gethostbyname(socket.gethostname())
+            self.send_response(302)
+            self.send_header("Location", "https://gr3gorywolf.github.io/decky-script-runner-sideloader?deckIp="+deviceIp)  # Redirect to '/status' or any path you prefer
+            self.end_headers()
 
     def do_POST(self):
         """Handle POST requests to create a new file with metadata."""
@@ -107,7 +124,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 
             # Write the file content
             with open(file_path, 'w') as file:
-                file.write(content)
+                file.write(clear_script_content(content))
             
             # Save metadata in a JSON file
             metadata = {
@@ -159,7 +176,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             # Update the file content
             if content is not None:
                 with open(file_path, 'w') as file:
-                    file.write(content)
+                    file.write(clear_script_content(content))
             
             # Update metadata in the JSON file
             metadata = {

@@ -11,26 +11,30 @@ import { useEffect, useState } from "react";
 import { MdCode, MdSettingsInputAntenna, MdSettings } from "react-icons/md";
 import { ScriptData } from "./types/script-data";
 import { ScriptCard } from "./components/ScriptCard";
+import { SideloaderAlert } from "./components/SideloaderAlert";
 
 function Content() {
   const [serverRunning, setServerRunning] = useState<boolean>(false);
   const [scripts, setScripts] = useState<ScriptData[]>([]);
   const [runningScripts, setRunningScripts] = useState<string[]>([]);
+  const [deckIp, setDeckIp] = useState("");
   const fetchData = async () => {
     let isRunning = await call<[], boolean>("is_server_running");
     let scriptsData = await call<[], string>("get_scripts_data");
     let runningScripts = await call<[], string[]>("get_running_scripts");
+    let deckIp = await call<[], string>("get_device_ip");
     setScripts(JSON.parse(scriptsData));
     setServerRunning(isRunning);
     setRunningScripts(runningScripts);
-  }
+    setDeckIp(deckIp);
+  };
   useEffect(() => {
     fetchData();
     const serverStatusListener = addEventListener("server_status_change", (status: boolean) => {
       if (status) {
-        toaster.toast({ title: "Server Started", body: "Script loader server has been started on port 9696" });
+        toaster.toast({ title: "Sideloading server Started", body: "Available on port 9696" });
       } else {
-        toaster.toast({ title: "Server stopped", body: "Script loader server has been stopped" });
+        toaster.toast({ title: "Sideloading server stopped", body: "Sideloading server has been stopped" });
       }
     });
     const interval = setInterval(fetchData, 1000);
@@ -43,7 +47,7 @@ function Content() {
   const toggleServer = async () => {
     await call<[], void>("toggle_server");
   };
-
+  const sideloadingUrl = `${deckIp}:9696`;
   return (
     <>
       <PanelSection>
@@ -57,6 +61,9 @@ function Content() {
             </DialogButton>
           </Focusable>
         </PanelSectionRow>
+        {serverRunning && (
+         <SideloaderAlert sideloadingUrl={sideloadingUrl}/>
+        )}
       </PanelSection>
       <PanelSection title="Scripts">
         {scripts.map((script) => (
