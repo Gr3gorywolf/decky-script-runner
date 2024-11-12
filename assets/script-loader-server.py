@@ -3,6 +3,7 @@ import json
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import socket
 from socketserver import ThreadingMixIn
+import ssl
 SCRIPTS_DIR = "/home/deck/homebrew/data/decky-script-runner/scripts"
 #SCRIPTS_DIR = "./uploads"  # Directory to store files
 
@@ -232,6 +233,9 @@ def start_server():
     """Start the server using asyncio and threading."""
     server_address = ('', 9696)
     httpd = ThreadedHTTPServer(server_address, CORSHandler)
+    # Wrap the server socket in SSL
+    httpd.socket = ssl.wrap_socket(httpd.socket, certfile='/home/deck/homebrew/plugins/decky-script-runner/assets/server.pem', server_side=True)
+    print("Server running on https://localhost:9696")
     httpd.serve_forever()
 
 

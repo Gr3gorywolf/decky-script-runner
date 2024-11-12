@@ -5,7 +5,7 @@ import React, { FC } from "react";
 import { humanizeFileName } from "../utils/helpers";
 import { call } from "@decky/api";
 import { ScriptConsoleModal } from "./ScriptConsoleModal";
-import { BashOriginal, LuaOriginal, NodejsOriginal, PerlOriginal, PythonOriginal } from "devicons-react";
+import { BashOriginal, LuaOriginal, NodejsOriginal, PerlOriginal, PhpOriginal, PythonOriginal, RubyOriginal } from "devicons-react";
 
 interface ImageProps extends React.SVGProps<SVGElement> {
   size?: number | string;
@@ -84,7 +84,9 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
       sh: <BashOriginal {...props}/>,
       js: <NodejsOriginal {...props}/>,
       lua:<LuaOriginal {...props}/>,
-      perl:<PerlOriginal {...props}/>,
+      pl:<PerlOriginal {...props}/>,
+      php:<PhpOriginal {...props}/>,
+      rb:<RubyOriginal {...props}/>,
       unknown: <BashOriginal {...props}/>,
     };
     //@ts-ignore

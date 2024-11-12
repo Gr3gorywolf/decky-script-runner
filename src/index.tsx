@@ -47,7 +47,7 @@ function Content() {
   const toggleServer = async () => {
     await call<[], void>("toggle_server");
   };
-  const sideloadingUrl = `${deckIp}:9696`;
+  const sideloadingUrl = `https://${deckIp}:9696`;
   return (
     <>
       <PanelSection>
@@ -62,7 +62,7 @@ function Content() {
           </Focusable>
         </PanelSectionRow>
         {serverRunning && (
-         <SideloaderAlert sideloadingUrl={sideloadingUrl}/>
+         <SideloaderAlert deckIp={deckIp} sideloadingUrl={sideloadingUrl}/>
         )}
       </PanelSection>
       <PanelSection title="Scripts">

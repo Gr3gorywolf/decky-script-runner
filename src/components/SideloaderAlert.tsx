@@ -4,9 +4,10 @@ import { MdInfo } from "react-icons/md";
 
 interface props{
     sideloadingUrl: string;
+    deckIp: string;
 }
 
-export const SideloaderAlert:FC<props> = ({sideloadingUrl}) =>{
+export const SideloaderAlert:FC<props> = ({sideloadingUrl, deckIp}) =>{
     return (
         <PanelSectionRow >
         <div
@@ -19,7 +20,7 @@ export const SideloaderAlert:FC<props> = ({sideloadingUrl}) =>{
             display: "flex",
             alignItems: "center",
             fontSize: "14px",
-            marginTop: '5px'
+            marginTop: '10px'
           }}
         >
           <MdInfo
@@ -32,7 +33,7 @@ export const SideloaderAlert:FC<props> = ({sideloadingUrl}) =>{
             Sideloading server is running at:{" "}
             <a
               onClick={() => {
-                window.open(`steam://openurl/http://${sideloadingUrl}`, "_blank");
+                window.open(`steam://openurl/https://gr3gorywolf.github.io/decky-script-runner-sideloader?deckIp=${deckIp}`, "_blank");
               }}
               href="#"
               target="_blank"
