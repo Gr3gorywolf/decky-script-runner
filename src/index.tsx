@@ -47,7 +47,7 @@ function Content() {
   const toggleServer = async () => {
     await call<[], void>("toggle_server");
   };
-  const sideloadingUrl = `https://${deckIp}:9696`;
+  const sideloadingUrl = `http://${deckIp}:9696`;
   return (
     <>
       <PanelSection>

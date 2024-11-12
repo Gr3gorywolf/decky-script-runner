@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import socket
 from socketserver import ThreadingMixIn
 import ssl
+PLUGIN_DIR = "/home/deck/homebrew/plugins/decky-script-runner"
 SCRIPTS_DIR = "/home/deck/homebrew/data/decky-script-runner/scripts"
 #SCRIPTS_DIR = "./uploads"  # Directory to store files
 
@@ -42,7 +43,7 @@ def get_script_infos():
         if os.path.exists(metadata_path):
             with open(metadata_path, 'r') as metadata_file:
                 metadata = json.load(metadata_file)
-                file_data.update(metadata)  # Add metadata to the file info
+                file_data.update(metadata)
         
         file_infos.append(file_data)
     
@@ -92,9 +93,13 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(file_info).encode())
         else:
             deviceIp = socket.gethostbyname(socket.gethostname())
-            self.send_response(302)
-            self.send_header("Location", "https://gr3gorywolf.github.io/decky-script-runner-sideloader?deckIp="+deviceIp)  # Redirect to '/status' or any path you prefer
-            self.end_headers()
+            with open(PLUGIN_DIR + "/assets/sideloader/index.html", 'r') as sideloader_file:
+                file_content = sideloader_file.read()
+                file_content = file_content.replace("[STEAM_DECK_IP]", deviceIp)
+                self.send_response(200)
+                self.send_header("Content-Type", "text/html")
+                self.end_headers()
+                self.wfile.write(file_content.encode())
 
     def do_POST(self):
         """Handle POST requests to create a new file with metadata."""
@@ -233,8 +238,6 @@ def start_server():
     """Start the server using asyncio and threading."""
     server_address = ('', 9696)
     httpd = ThreadedHTTPServer(server_address, CORSHandler)
-    # Wrap the server socket in SSL
-    httpd.socket = ssl.wrap_socket(httpd.socket, certfile='/home/deck/homebrew/plugins/decky-script-runner/assets/server.pem', server_side=True)
     print("Server running on https://localhost:9696")
     httpd.serve_forever()
 

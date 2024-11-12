@@ -33,7 +33,7 @@ export const SideloaderAlert:FC<props> = ({sideloadingUrl, deckIp}) =>{
             Sideloading server is running at:{" "}
             <a
               onClick={() => {
-                window.open(`steam://openurl/https://gr3gorywolf.github.io/decky-script-runner-sideloader?deckIp=${deckIp}`, "_blank");
+                window.open(`steam://openurl/http://${deckIp}:9696`, "_blank");
               }}
               href="#"
               target="_blank"
