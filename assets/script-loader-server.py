@@ -10,7 +10,7 @@ PLUGIN_DIR = "/home/deck/homebrew/plugins/decky-script-runner"
 SCRIPTS_DIR = "/home/deck/homebrew/data/decky-script-runner/scripts"
 #SCRIPTS_DIR = "./uploads"  # Directory to store script files
 METADATA_FILE = os.path.join(SCRIPTS_DIR, "metadata.json")
-
+suported_script_langs = [".js", ".py", ".sh", ".lua", ".pl", ".php", ".rb"]
 # Ensure upload directory exists
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 
@@ -71,6 +71,8 @@ def compile_metadata():
     metadata_list = []
     for file_name in os.listdir(SCRIPTS_DIR):
         file_path = os.path.join(SCRIPTS_DIR, file_name)
+        if [file_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
+            continue
         if file_name.endswith('.json') or not os.path.isfile(file_path):
             continue
 
@@ -78,7 +80,7 @@ def compile_metadata():
         mtime = os.path.getmtime(file_path)
 
         # Check if we need to reparse metadata based on mtime
-        if (file_name in existing_metadata and 
+        if (file_name in existing_metadata and
             existing_metadata[file_name].get("mtime") == mtime):
             # Use existing metadata entry if mtime matches
             metadata_list.append(existing_metadata[file_name])
@@ -151,29 +153,48 @@ class ScriptHandler(BaseHTTPRequestHandler):
         Handle POST request: save new script and recompile metadata.
         """
         file_length = int(self.headers['Content-Length'])
-        file_data = self.rfile.read(file_length).decode('utf-8')
-        data = json.loads(file_data)
-        file_name = data.get("name")
-        content = data.get("content", "")
-
-        if not file_name:
-            raise ValueError("File name is missing")
-        # Check if the file already exists
-        if os.path.exists(file_path):
-            self.send_response(409)
+        file_data = self.rfile.read(file_length)
+        try:
+            data = json.loads(file_data)
+            file_name = data.get("name")
+            content = data.get("content", "")
+            new_name = data.get("new_name", file_name)
+            if not file_name:
+                raise ValueError("File name is missing")
+            if [file_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
+                raise ValueError("Unsupported language")
+            file_path = os.path.join(SCRIPTS_DIR, file_name)
+            if self.path == "/rename":
+              if [new_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
+                raise ValueError("Unsupported language")
+              new_file_path = os.path.join(SCRIPTS_DIR, new_name)
+              if os.path.exists(file_path):
+                 os.rename(file_path, new_file_path)
+                 compile_metadata()
+              self.send_response(200)
+              self.send_header("Content-Type", "application/json")
+              self.end_headers()
+              self.wfile.write(json.dumps({"message": "File renamed", "file": new_name}).encode())
+            # Check if the file already exists
+            if os.path.exists(file_path):
+                self.send_response(409)
+                self.send_header("Content-Type", "application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps({"error": "File with this name already exists"}).encode())
+                return
+            with open(file_path, 'w') as f:
+                f.write(clear_script_content(content))
+            # Recompile metadata on any new script addition
+            compile_metadata()
+            self.send_response(200)
             self.send_header("Content-Type", "application/json")
             self.end_headers()
-            self.wfile.write(json.dumps({"error": "File with this name already exists"}).encode())
-            return
-        file_path = os.path.join(SCRIPTS_DIR, file_name)
-        with open(file_path, 'w') as f:
-            f.write(content)
-
-        # Recompile metadata on any new script addition
-        compile_metadata()
-
-        self.send_response(201)
-        self.end_headers()
+            self.wfile.write(json.dumps({"message": "File created", "file": file_name}).encode())
+        except (json.JSONDecodeError, ValueError) as e:
+            self.send_response(400)
+            self.send_header("Content-Type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({"error": str(e)}).encode())
 
     def do_PUT(self):
         """Handle PUT requests to update an existing file's content and metadata."""

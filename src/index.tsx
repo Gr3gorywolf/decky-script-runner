@@ -47,24 +47,25 @@ function Content() {
   const toggleServer = async () => {
     await call<[], void>("toggle_server");
   };
-  const sideloadingUrl = `http://${deckIp}:9696`;
+  const sideloadingUrl = `${deckIp}:9696`;
   return (
     <>
       <PanelSection>
-        <PanelSectionRow>
-          <Focusable flow-children="horizontal" style={{ display: "flex", padding: 0, gap: "8px" }}>
-            <DialogButton style={{ minWidth: 0, width: "15%", height: "28px", backgroundColor: serverRunning ? "#1b5e20" : undefined, padding: "6px" }} onClick={toggleServer}>
-              <MdSettingsInputAntenna />
-            </DialogButton>
-            <DialogButton style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }} onClick={() => {}}>
-              <MdSettings />
-            </DialogButton>
-          </Focusable>
-        </PanelSectionRow>
-        {serverRunning && (
-         <SideloaderAlert deckIp={deckIp} sideloadingUrl={sideloadingUrl}/>
-        )}
+        <div style={{ marginBottom: "-16px" }}>
+          {serverRunning && <SideloaderAlert deckIp={deckIp} sideloadingUrl={sideloadingUrl} />}
+          <PanelSectionRow>
+            <Focusable flow-children="horizontal" style={{ display: "flex", padding: 0, gap: "8px" }}>
+              <DialogButton style={{ minWidth: 0, width: "15%", height: "28px", backgroundColor: serverRunning ? "#1b5e20" : undefined, padding: "6px" }} onClick={toggleServer}>
+                <MdSettingsInputAntenna />
+              </DialogButton>
+              <DialogButton style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }} onClick={() => {}}>
+                <MdSettings />
+              </DialogButton>
+            </Focusable>
+          </PanelSectionRow>
+        </div>
       </PanelSection>
+
       <PanelSection title="Scripts">
         {scripts.map((script) => (
           <PanelSectionRow>

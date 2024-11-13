@@ -14,22 +14,22 @@ export const SideloaderAlert:FC<props> = ({sideloadingUrl, deckIp}) =>{
           style={{
             backgroundColor: "#262D35",
             color: "#E0E0E0",
-            padding: "12px 16px",
+            padding: "6px 7px",
             borderRadius: "4px",
             boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
             display: "flex",
             alignItems: "center",
             fontSize: "14px",
-            marginTop: '10px'
+            marginBottom: '8px'
           }}
         >
           <MdInfo
             style={{
-              fontSize: "24px",
-              marginRight: "12px",
+              fontSize: "13px",
+              marginRight: "4px",
             }}
           />
-          <h5 style={{ margin: 0, fontWeight: "normal" }}>
+          <h5 style={{ margin: 0, fontWeight: "normal", fontSize:"9px" }}>
             Sideloading server is running at:{" "}
             <a
               onClick={() => {

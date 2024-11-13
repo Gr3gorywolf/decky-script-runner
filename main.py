@@ -23,6 +23,7 @@ server_process = None
 running_scripts_map = {}
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
+suported_script_langs = [".js", ".py", ".sh", ".lua", ".pl", ".php", ".rb"]
 def parse_metadata(file_path):
     """
     Parse the metadata from the top of a script file, or set default values if metadata is missing.
@@ -75,6 +76,8 @@ def compile_metadata():
     metadata_list = []
     for file_name in os.listdir(SCRIPTS_DIR):
         file_path = os.path.join(SCRIPTS_DIR, file_name)
+        if [file_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
+            continue
         if file_name.endswith('.json') or not os.path.isfile(file_path):
             continue
 
@@ -82,7 +85,7 @@ def compile_metadata():
         mtime = os.path.getmtime(file_path)
 
         # Check if we need to reparse metadata based on mtime
-        if (file_name in existing_metadata and 
+        if (file_name in existing_metadata and
             existing_metadata[file_name].get("mtime") == mtime):
             # Use existing metadata entry if mtime matches
             metadata_list.append(existing_metadata[file_name])
@@ -105,29 +108,65 @@ def monitor_process_from_fd(master_fd,slave_fd,process, log_file_path):
                 if output:
                     log_file.write(output)
                     log_file.flush()
-                
+
                 if process.poll() is not None:
                     break
             except OSError:
                 break
-    
+
     os.close(master_fd)
     os.close(slave_fd)
 class Plugin:
     async def _main(self):
         decky.logger.info("Decky Script Loader plugin loaded.")
-    
+
     async def _unload(self):
         decky.logger.info("Decky Script Loader plugin unloaded.")
         await self.stop_server()
-    
+        await self.stop_all_running_scripts()
+
     async def get_scripts_data(self):
         script_infos = compile_metadata()
         return json.dumps(script_infos)
 
     async def get_device_ip(self):
         return socket.gethostbyname(socket.gethostname())
-    
+
+    async def get_script_content(self, script_name):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if os.path.exists(script_path):
+             with open(script_path, 'r') as file:
+                  file_content = file.read()
+                  return file_content
+        else:
+            return None
+
+    async def save_script_content(self, script_name,content):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if os.path.exists(script_path):
+              with open(script_path, 'w') as file:
+                  file.write(content)
+                  return True
+        else:
+            return False
+
+    async def delete_script(self, script_name):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if os.path.exists(script_path):
+            os.remove(script_path)
+            compile_metadata()
+            return True
+        return False
+
+    async def rename_script(self, script_name, new_script_name):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        new_script_path = os.path.join(SCRIPTS_DIR, new_script_name)
+        if os.path.exists(script_path):
+            os.rename(script_path, new_script_path)
+            compile_metadata()
+            return True
+        return False
+
     ## SideLoading Server API
     async def is_server_running(self):
         """Checks if the server script is running."""
@@ -143,7 +182,7 @@ class Plugin:
         if await self.is_server_running():
             decky.logger.info("Server is already running.")
             return 0
-        
+
         global server_process
         server_process = subprocess.Popen(
             ["python3", SERVER_SCRIPT_PATH]
@@ -157,7 +196,7 @@ class Plugin:
         if not await self.is_server_running():
             decky.logger.info("Server is not running.")
             return 0
-        
+
         global server_process
         try:
             server_process.terminate()
@@ -170,7 +209,7 @@ class Plugin:
         finally:
             server_process = None
         return 0
-    
+
 
      # Script runner API
     async def run_script(self, script_name):
@@ -178,7 +217,7 @@ class Plugin:
         script_path = os.path.join(SCRIPTS_DIR, script_name)
         if not os.path.exists(script_path):
             return "Script not found"
-        
+
         # Determine the appropriate binary based on file extension
         _, extension = os.path.splitext(script_name)
         if extension == '.js':
@@ -197,14 +236,14 @@ class Plugin:
             interpreter = "ruby"
         else:
             return f"Unsupported script type: {extension}"
-        
+
         # Define the log file path
         log_file_path = os.path.join(LOG_DIR, f"{script_name}.log")
-        
+
         # If the script is already running, return early
         if script_name in running_scripts_map and running_scripts_map[script_name].poll() is None:
             return f"Script '{script_name}' is already running."
-        
+
         # Delete existing log file if it exists
         if os.path.exists(log_file_path):
             os.remove(log_file_path)
@@ -218,21 +257,21 @@ class Plugin:
             text=True,
             close_fds=True
         )
-        running_scripts_map[script_name] = process    
+        running_scripts_map[script_name] = process
         thread = threading.Thread(target=monitor_process_from_fd, args=(master_fd,slave_fd,process, log_file_path))
 
         # Start the threads
         thread.start()
-        
+
         # Add the process to the process_map
-        
-        
+
+
         return f"Script '{script_name}' started with {interpreter}. Logs are being written to {log_file_path}"
-    
+
     async def get_script_logs(self, script_name):
         """Fetch the log content of a running or completed script."""
         log_file_path = os.path.join(LOG_DIR, f"{script_name}.log")
-        
+
         # Check if the log file exists
         if not os.path.exists(log_file_path):
             return f"No log file found for '{script_name}'."
@@ -240,14 +279,14 @@ class Plugin:
         # Read and return the content of the log file
         with open(log_file_path, 'r') as log_file:
             log_content = log_file.read()
-        
+
         return log_content
-    
+
     async def stop_script(self, script_name):
         """Stop a running script by its name."""
         if script_name not in running_scripts_map:
             return f"Script '{script_name}' is not running."
-        
+
         process = running_scripts_map[script_name]
         if process.poll() is None:  # If the process is still running
             process.terminate()
@@ -256,7 +295,7 @@ class Plugin:
             return f"Script '{script_name}' has been stopped."
         else:
             return f"Script '{script_name}' is not running."
-            
+
 
     async def is_script_running(self, script_name):
         """Check if a script is currently running."""
@@ -264,7 +303,7 @@ class Plugin:
             process = running_scripts_map[script_name]
             return process.poll() is None  # If the process is still running
         return False
-    
+
     async def toggle_script_running(self, script_name):
         """Toggle the running state of a script."""
         if await self.is_script_running(script_name):
@@ -279,6 +318,13 @@ class Plugin:
             if process.poll() is None:  # If the process is still running
                 running_processes.append(script_name)
         return running_processes
+
+    async def stop_all_running_scripts(self):
+        for script_name, process in list(running_scripts_map.items()):
+            if process.poll() is None:
+                process.terminate()
+                process.wait()
+                del running_scripts_map[script_name]
 
     async def check_and_cleanup_finished_scripts(self):
         """Checks all running processes, removes them from the queue if finished."""
