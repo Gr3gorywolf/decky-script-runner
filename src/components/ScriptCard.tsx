@@ -1,7 +1,7 @@
-import { Focusable, DialogButton, showModal, showContextMenu, Menu, MenuItem, TextField } from "@decky/ui";
+import { Focusable, DialogButton, showModal, showContextMenu, Menu, MenuItem } from "@decky/ui";
 import { MdTerminal, MdPlayArrow, MdStop, MdMoreVert, MdDelete, MdEdit, MdCode } from "react-icons/md";
 import { ScriptData } from "../types/script-data";
-import React, { FC, useState } from "react";
+import React, { FC } from "react";
 import { call, toaster } from "@decky/api";
 import { ScriptConsoleModal } from "./ScriptConsoleModal";
 import {
@@ -14,8 +14,9 @@ import {
     RubyOriginal,
 } from "devicons-react";
 import { AlertModal } from "./AlertModal";
+import { ScriptViewerModal } from "./ScriptViewerModal";
+import { TextAlertModal } from "./TextAlertModal";
 import { validateFileName } from "../utils/validators";
-import { ScriptEditorModal } from "./ScriptEditorModal";
 
 interface ImageProps extends React.SVGProps<SVGElement> {
     size?: number | string;
@@ -87,7 +88,6 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
         height: "28px",
         maxWidth: "23px !important",
     };
-    const [newScriptName, setNewScriptName] = useState("");
 
     const ImageByLanguage: React.FunctionComponent<ImageProps> = (props) => {
         const languageImages = {
@@ -104,7 +104,6 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
         const foundImage = languageImages[script.language] ?? languageImages.unknown;
         return foundImage;
     };
-
     const handleToggleRunningScript = async () => {
         await call<[string], void>("toggle_script_running", script.name);
     };
@@ -124,36 +123,24 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
 
     const handleRenameScript = async () => {
         showModal(
-            <AlertModal
+            <TextAlertModal
+                textTitle="New script name"
                 title="Rename script"
-                content={
-                    <TextField
-                        label={"New script name"}
-                        value={script.name}
-                        onChange={(e) => setNewScriptName(e.target.value)}
-                    />
-                }
-                onOk={() => {
-                    setNewScriptName((curFileName)=>{
-                        if(validateFileName(curFileName)){
-                            call<[string, string], void>("rename_script", script.name, newScriptName);
-                            return script.name
-                        }else{
-                            toaster.toast({ title: "Invalid filename", body: "Unsopported language or whitespace found" });
-                        }
-                        return newScriptName
-                    })
-
+                initialValue={script.name}
+                onOk={(newName) => {
+                    if (validateFileName(newName)) {
+                        call<[string, string], void>("rename_script", script.name, newName);
+                    } else {
+                        toaster.toast({ title: "Invalid filename", body: "Unsopported language or whitespace found" });
+                    }
                 }}
-                okayText="Continue"
             />
         );
     };
 
-
-    const handleOpenEditor = () =>{
-        showModal(<ScriptEditorModal script={script} />);
-    }
+    const handleOpenEditor = () => {
+        showModal(<ScriptViewerModal script={script} />);
+    };
 
     const showScriptContextMenu = () => {
         showContextMenu(
@@ -161,18 +148,21 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
                 <MenuItem onClick={() => handleDeleteScript()}>
                     <MdDelete /> Delete{" "}
                 </MenuItem>
-                <MenuItem onClick={()=> handleRenameScript()}>
+                <MenuItem onClick={() => handleRenameScript()}>
                     <MdEdit /> Rename{" "}
                 </MenuItem>
-                <MenuItem onClick={()=>handleOpenEditor()}>
+                <MenuItem onClick={() => showConsoleModal()}>
+                    <MdTerminal /> View logs
+                </MenuItem>
+                <MenuItem onClick={() => handleOpenEditor()}>
                     <MdCode /> View source
                 </MenuItem>
             </Menu>
         );
     };
 
-    const showDetailsModal = () => {
-        showModal(<ScriptConsoleModal script={script} />);
+    const showConsoleModal = () => {
+        showModal(<ScriptConsoleModal isRunning={isRunning} script={script} />);
     };
 
     return (
@@ -182,12 +172,11 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
                 <div style={contentStyle}>
                     <h2 style={nameStyle}>{script.title}</h2>
                     {script.description && <p style={descriptionStyle}>{script.description}</p>}
-                    {script.author ||
-                        (script.version && (
-                            <p style={authorStyle}>
-                                v{script.version} by {script.author}
-                            </p>
-                        ))}
+                    {(script.author || script.version) && (
+                        <p style={authorStyle}>
+                            v{script.version} by {script.author}
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -197,7 +186,7 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
                 </DialogButton>
 
                 {isRunning && (
-                    <DialogButton style={buttonStyle} onClick={showDetailsModal}>
+                    <DialogButton style={buttonStyle} onClick={showConsoleModal}>
                         <MdTerminal />
                     </DialogButton>
                 )}

@@ -68,7 +68,7 @@ function Content() {
 
       <PanelSection title="Scripts">
         {scripts.map((script) => (
-          <PanelSectionRow>
+          <PanelSectionRow key={script.name}>
             <ScriptCard isRunning={runningScripts.includes(script.name)} script={script} />
           </PanelSectionRow>
         ))}
