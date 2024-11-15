@@ -4,6 +4,7 @@ import { humanizeFileName } from "../utils/helpers";
 import { ConfirmModal } from "@decky/ui";
 import { call } from "@decky/api";
 import React from "react";
+import Ansi from "ansi-to-react";
 
 interface props {
     script: ScriptData;
@@ -33,6 +34,7 @@ export const ScriptConsoleModal: FC<props> = ({ closeModal, script, isRunning })
     };
 
     useEffect(() => {
+        fetchConsoleOutput();
         const interval = setInterval(fetchConsoleOutput, 1000);
         const autoScrollInterval = setInterval(autoScroll, 200);
         return () => {
@@ -82,7 +84,9 @@ export const ScriptConsoleModal: FC<props> = ({ closeModal, script, isRunning })
                 {consoleOutput.map((line, index) => (
                     <div key={index} style={lineStyle}>
                         <span style={promptStyle}>{`/>`}</span>
-                        <span style={infoStyle}>{line}</span>
+                        <span style={infoStyle}>
+                            <Ansi>{line}</Ansi>
+                        </span>
                     </div>
                 ))}
             </div>

@@ -17,6 +17,7 @@ import { AlertModal } from "./AlertModal";
 import { ScriptViewerModal } from "./ScriptViewerModal";
 import { TextAlertModal } from "./TextAlertModal";
 import { validateFileName } from "../utils/validators";
+import { useSettings } from "../hooks/useSettings";
 
 interface ImageProps extends React.SVGProps<SVGElement> {
     size?: number | string;
@@ -89,6 +90,8 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
         maxWidth: "23px !important",
     };
 
+    const settings = useSettings();
+
     const ImageByLanguage: React.FunctionComponent<ImageProps> = (props) => {
         const languageImages = {
             py: <PythonOriginal {...props} />,
@@ -104,8 +107,23 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
         const foundImage = languageImages[script.language] ?? languageImages.unknown;
         return foundImage;
     };
-    const handleToggleRunningScript = async () => {
-        await call<[string], void>("toggle_script_running", script.name);
+    const handleToggleRunningScript = async (rootPasswd?: string) => {
+        if (!rootPasswd && script.root && !isRunning) {
+            showModal(
+                <TextAlertModal
+                    textTitle="This script requires root permissions to run, Take care!"
+                    title="Root password required"
+                    onOk={(passwd) => {
+                        handleToggleRunningScript(passwd);
+                    }}
+                />
+            );
+            return;
+        }
+        await call<[string, string?], void>("toggle_script_running", script.name, rootPasswd);
+        if (!isRunning && settings.launchLogsConsole) {
+            showConsoleModal();
+        }
     };
 
     const handleDeleteScript = async () => {
@@ -170,18 +188,27 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
             <div style={containerInfoStyle}>
                 <ImageByLanguage size={40} style={imageStyle} />
                 <div style={contentStyle}>
-                    <h2 style={nameStyle}>{script.title}</h2>
+                    <h2 style={nameStyle}>{settings.showScriptName ? script.name : script.title}</h2>
                     {script.description && <p style={descriptionStyle}>{script.description}</p>}
-                    {(script.author || script.version) && (
+                    {(script.author || script.version || script.root) && (
                         <p style={authorStyle}>
-                            v{script.version} by {script.author}
+                            {script.root && (
+                                <span
+                                    style={{
+                                        color: "#b71c1c",
+                                    }}
+                                >
+                                    [ROOT]
+                                </span>
+                            )}
+                            {"  "}v{script.version} by {script.author}
                         </p>
                     )}
                 </div>
             </div>
 
             <Focusable flow-children="horizontal" style={buttonContainerStyle}>
-                <DialogButton focusable style={buttonStyle} onClick={handleToggleRunningScript}>
+                <DialogButton focusable style={buttonStyle} onClick={() => handleToggleRunningScript()}>
                     {isRunning ? <MdStop /> : <MdPlayArrow />}
                 </DialogButton>
 

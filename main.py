@@ -18,11 +18,14 @@ LOG_DIR = SCRIPTS_DIR + "/logs"
 # Path to the script that will act as the server
 SERVER_SCRIPT_PATH = decky.DECKY_PLUGIN_DIR + "/assets/script-loader-server.py"
 METADATA_FILE = os.path.join(SCRIPTS_DIR, "metadata.json")
+SETTINGS_FILE = os.path.join(decky.DECKY_PLUGIN_SETTINGS_DIR, "settings.json")
+SCRIPT_DATA_PATH = SCRIPTS_DIR +"/scripts-data"
 # This will hold the process reference for the running script (if any)
 server_process = None
 running_scripts_map = {}
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
+os.makedirs(SCRIPT_DATA_PATH, exist_ok=True)
 suported_script_langs = [".js", ".py", ".sh", ".lua", ".pl", ".php", ".rb"]
 def parse_metadata(file_path):
     """
@@ -167,6 +170,49 @@ class Plugin:
             return True
         return False
 
+    ## Settings API
+    async def init_settings(self,default_settings):
+        """
+        Save a setting (key-value pair) to the JSON file.
+        """
+
+        # Load existing settings if the file exists
+        if not os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'w') as file:
+                      json.dump(default_settings, file, indent=4)
+        decky.logger.info("Loading settings. " + SETTINGS_FILE)
+        return default_settings
+
+    async def set_setting(self,key, value):
+        """
+        Save a setting (key-value pair) to the JSON file.
+        """
+        settings = {}
+
+        # Load existing settings if the file exists
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r') as file:
+                settings = json.load(file)
+
+        # Update the setting
+        settings[key] = value
+
+        # Save the updated settings back to the file
+        with open(SETTINGS_FILE, 'w') as file:
+            json.dump(settings, file, indent=4)
+        return value
+
+    async def get_settings(self):
+        """
+        Retrieve a setting by key from the JSON file, returning a default value if the key is not found.
+        """
+        if os.path.exists(SETTINGS_FILE):
+            with open(SETTINGS_FILE, 'r') as file:
+                return  json.load(file)
+
+        return {}
+
+
     ## SideLoading Server API
     async def is_server_running(self):
         """Checks if the server script is running."""
@@ -212,7 +258,7 @@ class Plugin:
 
 
      # Script runner API
-    async def run_script(self, script_name):
+    async def run_script(self, script_name, root_passwd=None):
         # Check if the script exists
         script_path = os.path.join(SCRIPTS_DIR, script_name)
         if not os.path.exists(script_path):
@@ -249,13 +295,26 @@ class Plugin:
             os.remove(log_file_path)
         master_fd, slave_fd = pty.openpty()
 
+        base_command = [interpreter, script_path]
+        command_to_exec = ""
+        use_shell = True
+        if root_passwd:
+          command_to_exec = f"echo {root_passwd} | sudo -S " + " ".join(base_command)
+        else:
+          command_to_exec = base_command
+          use_shell = False
+
+
+
         # Run the script using the determined interpreter and redirect stdout and stderr to the log file
         process = subprocess.Popen(
-            ["stdbuf", "-oL", interpreter, script_path],
+            command_to_exec,
             stdout=slave_fd,
             stderr=slave_fd,
             text=True,
-            close_fds=True
+            shell=use_shell,
+            close_fds=True,
+            cwd=SCRIPT_DATA_PATH
         )
         running_scripts_map[script_name] = process
         thread = threading.Thread(target=monitor_process_from_fd, args=(master_fd,slave_fd,process, log_file_path))
@@ -304,12 +363,12 @@ class Plugin:
             return process.poll() is None  # If the process is still running
         return False
 
-    async def toggle_script_running(self, script_name):
+    async def toggle_script_running(self, script_name, root_passwd=None):
         """Toggle the running state of a script."""
         if await self.is_script_running(script_name):
             return await self.stop_script(script_name)
         else:
-            return await self.run_script(script_name)
+            return await self.run_script(script_name, root_passwd)
 
     async def get_running_scripts(self):
         """Returns a map of running scripts with their process handles."""
