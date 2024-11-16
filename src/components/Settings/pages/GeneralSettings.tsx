@@ -41,7 +41,7 @@ export const GeneralSettings = () => {
                     }}
                 />
             </Field>
-            <Field
+            {/* <Field
                 label="Enable launch from sideloader"
                 description="Enables remote script execution from the sideloader server (Need to reload the sideloader app)"
             >
@@ -51,7 +51,7 @@ export const GeneralSettings = () => {
                         handleUpdateSettings(SettingKeys.enableLaunchFromSideloader, deckyUpdates);
                     }}
                 />
-            </Field>
+            </Field> */}
         </Focusable>
     );
 };

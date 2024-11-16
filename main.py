@@ -122,11 +122,25 @@ def monitor_process_from_fd(master_fd,slave_fd,process, log_file_path):
 class Plugin:
     async def _main(self):
         decky.logger.info("Decky Script Loader plugin loaded.")
+        try:
+            # Create a symbolic link
+            os.symlink(SCRIPTS_DIR, "/home/deck/decky-scripts")
+        except FileExistsError:
+            pass
+        except Exception as e:
+            pass
 
     async def _unload(self):
         decky.logger.info("Decky Script Loader plugin unloaded.")
         await self.stop_server()
         await self.stop_all_running_scripts()
+
+    async def _uninstall(self):
+        await self._unload()
+        symlink_path = "/home/deck/decky-scripts"
+        if os.path.exists(symlink_path) and  os.path.islink(symlink_path):
+            os.unlink(symlink_path)
+        pass
 
     async def get_scripts_data(self):
         script_infos = compile_metadata()
@@ -149,6 +163,16 @@ class Plugin:
         if os.path.exists(script_path):
               with open(script_path, 'w') as file:
                   file.write(content)
+                  return True
+        else:
+            return False
+
+    async def create_script(self, script_name,content):
+        script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if not os.path.exists(script_path):
+              with open(script_path, 'w') as file:
+                  file.write(content)
+                  compile_metadata()
                   return True
         else:
             return False

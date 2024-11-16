@@ -3,7 +3,7 @@ import React, { FC } from "react";
 
 interface props {
     title: React.ReactNode;
-    okayText: string;
+    okayText?: string;
     content?: React.ReactNode;
     onOk?: () => void;
     closeModal?(): void;

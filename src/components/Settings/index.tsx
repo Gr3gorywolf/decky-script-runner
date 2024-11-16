@@ -1,10 +1,14 @@
 import { GeneralSettings } from "./pages/GeneralSettings";
 import { AboutPage } from "./pages/AboutPage";
 import { Focusable, Tabs } from "@decky/ui";
-import { useState } from "react";
+import { FC, useState } from "react";
 
-export const SettingsPage = () => {
-    const [currentTab, setCurrentTab] = useState<string>("general-settings");
+interface props{
+    initialTab?: string;
+}
+
+export const SettingsPage:FC<props> = ({initialTab}) => {
+    const [currentTab, setCurrentTab] = useState<string>(initialTab ?? "general-settings");
     const tabs = [
         {
             title: "General settings",

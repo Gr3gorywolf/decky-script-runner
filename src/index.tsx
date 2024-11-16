@@ -1,12 +1,24 @@
-import { PanelSection, PanelSectionRow, staticClasses, DialogButton, Focusable, Navigation } from "@decky/ui";
+import {
+    PanelSection,
+    PanelSectionRow,
+    staticClasses,
+    DialogButton,
+    Focusable,
+    Navigation,
+    showModal,
+} from "@decky/ui";
 import { addEventListener, removeEventListener, definePlugin, toaster, call, routerHook } from "@decky/api";
 import { useEffect, useState } from "react";
-import { MdCode, MdSettings, MdSyncAlt, MdStorefront, MdInfo } from "react-icons/md";
+import { MdCode, MdSettings, MdSyncAlt, MdStorefront, MdInfo, MdAdd } from "react-icons/md";
 import { ScriptData } from "./types/script-data";
 import { ScriptCard } from "./components/ScriptCard";
 import { SideloaderAlert } from "./components/SideloaderAlert";
 import { SettingsPage } from "./components/Settings";
 import { SettingsProvider } from "./contexts/SettingsContext";
+import { TextAlertModal } from "./components/TextAlertModal";
+import { SUPPORTED_SCRIPT_FORMATS } from "./utils/constants";
+import { generateScriptComment } from "./utils/scripts";
+import { AlertModal } from "./components/AlertModal";
 
 function Content() {
     const [serverRunning, setServerRunning] = useState<boolean>(false);
@@ -25,6 +37,48 @@ function Content() {
     };
     const handleGoToSettings = () => {
         Navigation.Navigate("/decky-script-runner/settings");
+    };
+
+    const handleGoToAbout = () => {
+        Navigation.Navigate("/decky-script-runner/about");
+    };
+
+    const handleAddNewScript = () => {
+        showModal(
+            <TextAlertModal
+                onOk={async (result, close) => {
+                    if (result && SUPPORTED_SCRIPT_FORMATS.some((format) => result.endsWith(format))) {
+                        const created = await call<[string, string], boolean>(
+                            "create_script",
+                            result,
+                            generateScriptComment(result, true)
+                        );
+                        if (!created) {
+                            showModal(
+                                <AlertModal
+                                    title="Script already exists"
+                                    okayText="Ok"
+                                    onOk={handleAddNewScript}
+                                    content={`Script with name ${result} already exists`}
+                                />
+                            );
+                        }
+                    } else {
+                        showModal(
+                            <AlertModal
+                                title="Invalid file format"
+                                okayText="Ok"
+                                onOk={handleAddNewScript}
+                                content={`File format must be one of ${SUPPORTED_SCRIPT_FORMATS.join(", ")}`}
+                            />
+                        );
+                    }
+                    close();
+                }}
+                title="Create a script"
+                textTitle={`Supported file formats are ${SUPPORTED_SCRIPT_FORMATS.join(", ")}`}
+            />
+        );
     };
     useEffect(() => {
         fetchData();
@@ -67,19 +121,19 @@ function Content() {
                             </DialogButton>
                             <DialogButton
                                 style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}
-                                onClick={handleGoToSettings}
-                            >
-                                <MdSettings />
-                            </DialogButton>
-                            <DialogButton
-                                style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}
                                 onClick={() => {}}
                             >
                                 <MdStorefront />
                             </DialogButton>
                             <DialogButton
                                 style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}
-                                onClick={() => {}}
+                                onClick={handleGoToSettings}
+                            >
+                                <MdSettings />
+                            </DialogButton>
+                            <DialogButton
+                                style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}
+                                onClick={handleGoToAbout}
                             >
                                 <MdInfo />
                             </DialogButton>
@@ -89,6 +143,22 @@ function Content() {
             </PanelSection>
 
             <PanelSection title="Scripts">
+                <DialogButton
+                    style={{
+                        minWidth: 0,
+                        height: "24px",
+                        padding: "3px",
+                        fontSize: "12px",
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "4px",
+                    }}
+                    onClick={handleAddNewScript}
+                >
+                    <MdAdd /> Add new script
+                </DialogButton>
                 {scripts.map((script) => (
                     <PanelSectionRow key={script.name}>
                         <ScriptCard isRunning={runningScripts.includes(script.name)} script={script} />
@@ -102,8 +172,13 @@ function Content() {
 export default definePlugin(() => {
     console.log("Template plugin initializing, this is called once on frontend startup");
 
+    const SettingsPageAbout = () => <SettingsPage initialTab="about" />;
     routerHook.addRoute("/decky-script-runner/settings", SettingsPage, {
         exact: true,
+    });
+    routerHook.addRoute("/decky-script-runner/about", SettingsPageAbout, {
+        exact: true,
+        initialTab: "about",
     });
     return {
         // The name shown in various decky menus
@@ -120,6 +195,7 @@ export default definePlugin(() => {
         onDismount() {
             console.log("Unloading");
             routerHook.removeRoute("/decky-script-runner/settings");
+            routerHook.removeRoute("/decky-script-runner/about");
         },
     };
 });
