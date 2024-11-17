@@ -182,6 +182,7 @@ class ScriptHandler(BaseHTTPRequestHandler):
               self.send_header("Content-Type", "application/json")
               self.end_headers()
               self.wfile.write(json.dumps({"message": "File renamed", "file": new_name}).encode())
+              return
             # Check if the file already exists
             if os.path.exists(file_path):
                 self.send_response(409)
