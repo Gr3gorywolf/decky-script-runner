@@ -1,27 +1,16 @@
 import { Focusable, DialogButton, showModal, showContextMenu, Menu, MenuItem } from "@decky/ui";
-import { MdTerminal, MdPlayArrow, MdStop, MdMoreVert, MdDelete, MdEdit, MdCode } from "react-icons/md";
+import { MdTerminal, MdPlayArrow, MdStop, MdMoreVert, MdDelete, MdEdit, MdCode, MdStorefront } from "react-icons/md";
 import { ScriptData } from "../types/script-data";
 import React, { FC } from "react";
 import { call, toaster } from "@decky/api";
 import { ScriptConsoleModal } from "./ScriptConsoleModal";
-import {
-    BashOriginal,
-    LuaOriginal,
-    NodejsOriginal,
-    PerlOriginal,
-    PhpOriginal,
-    PythonOriginal,
-    RubyOriginal,
-} from "devicons-react";
 import { AlertModal } from "./AlertModal";
 import { ScriptViewerModal } from "./ScriptViewerModal";
 import { TextAlertModal } from "./TextAlertModal";
 import { validateFileName } from "../utils/validators";
 import { useSettings } from "../hooks/useSettings";
+import { ImageByLanguage } from "./ImageByLanguage";
 
-interface ImageProps extends React.SVGProps<SVGElement> {
-    size?: number | string;
-}
 
 interface props {
     script: ScriptData;
@@ -92,21 +81,7 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
 
     const settings = useSettings();
 
-    const ImageByLanguage: React.FunctionComponent<ImageProps> = (props) => {
-        const languageImages = {
-            py: <PythonOriginal {...props} />,
-            sh: <BashOriginal {...props} />,
-            js: <NodejsOriginal {...props} />,
-            lua: <LuaOriginal {...props} />,
-            pl: <PerlOriginal {...props} />,
-            php: <PhpOriginal {...props} />,
-            rb: <RubyOriginal {...props} />,
-            unknown: <BashOriginal {...props} />,
-        };
-        //@ts-ignore
-        const foundImage = languageImages[script.language] ?? languageImages.unknown;
-        return foundImage;
-    };
+
     const handleToggleRunningScript = async (rootPasswd?: string) => {
         if (!rootPasswd && script.root && !isRunning) {
             showModal(
@@ -164,11 +139,11 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
         showContextMenu(
             <Menu cancelText="Close" label="Script actions">
                 <MenuItem onClick={() => handleDeleteScript()}>
-                    <MdDelete /> Delete{" "}
+                    <MdDelete /> {!script["is-downloaded"]? 'Delete' :'Uninstall'}{" "}
                 </MenuItem>
-                <MenuItem onClick={() => handleRenameScript()}>
+               {!script["is-downloaded"] && <MenuItem onClick={() => handleRenameScript()}>
                     <MdEdit /> Rename{" "}
-                </MenuItem>
+                </MenuItem>}
                 <MenuItem onClick={() => showConsoleModal()}>
                     <MdTerminal /> View logs
                 </MenuItem>
@@ -186,12 +161,15 @@ export const ScriptCard: FC<props> = ({ isRunning, script }) => {
     return (
         <div style={containerStyle}>
             <div style={containerInfoStyle}>
-                <ImageByLanguage size={40} style={imageStyle} />
+                <ImageByLanguage script={script} size={40} style={imageStyle} />
                 <div style={contentStyle}>
                     <h2 style={nameStyle}>{settings.showScriptName ? script.name : script.title}</h2>
                     {script.description && <p style={descriptionStyle}>{script.description}</p>}
                     {(script.author || script.version || script.root) && (
                         <p style={authorStyle}>
+                             {
+                                script["is-downloaded"] && <span style={{color:"#4caf50"}}>[<MdStorefront/>]</span>
+                            }
                             {script.root && (
                                 <span
                                     style={{

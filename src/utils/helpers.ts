@@ -11,3 +11,23 @@ export const getFileExtension = (fileName:string, returnDots = true) =>{
   const fileExtension = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
   return returnDots ? fileExtension : fileExtension.slice(1);
 }
+
+
+export const getFullLanguageName = (language: string) => {
+  switch (language) {
+    case "js":
+      return "JavaScript";
+    case "sh":
+      return "Bash";
+    case "py":
+      return "Python";
+    case "lua":
+      return "Lua";
+    case "pl":
+      return "Perl";
+    case "rb":
+      return "Ruby";
+    default:
+      return language;
+  }
+}

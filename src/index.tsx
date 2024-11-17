@@ -19,6 +19,7 @@ import { TextAlertModal } from "./components/TextAlertModal";
 import { SUPPORTED_SCRIPT_FORMATS } from "./utils/constants";
 import { generateScriptComment } from "./utils/scripts";
 import { AlertModal } from "./components/AlertModal";
+import { StorePage } from "./components/Store";
 
 function Content() {
     const [serverRunning, setServerRunning] = useState<boolean>(false);
@@ -42,6 +43,10 @@ function Content() {
     const handleGoToAbout = () => {
         Navigation.Navigate("/decky-script-runner/about");
     };
+
+    const handleGoToStore = () =>{
+        Navigation.Navigate("/decky-script-runner/store");
+    }
 
     const handleAddNewScript = () => {
         showModal(
@@ -121,7 +126,7 @@ function Content() {
                             </DialogButton>
                             <DialogButton
                                 style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}
-                                onClick={() => {}}
+                                onClick={handleGoToStore}
                             >
                                 <MdStorefront />
                             </DialogButton>
@@ -178,7 +183,10 @@ export default definePlugin(() => {
     });
     routerHook.addRoute("/decky-script-runner/about", SettingsPageAbout, {
         exact: true,
-        initialTab: "about",
+    });
+
+    routerHook.addRoute("/decky-script-runner/store", StorePage, {
+        exact: true,
     });
     return {
         // The name shown in various decky menus
@@ -196,6 +204,7 @@ export default definePlugin(() => {
             console.log("Unloading");
             routerHook.removeRoute("/decky-script-runner/settings");
             routerHook.removeRoute("/decky-script-runner/about");
+            routerHook.removeRoute("/decky-script-runner/store");
         },
     };
 });

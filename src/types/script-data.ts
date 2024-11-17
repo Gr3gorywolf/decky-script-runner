@@ -7,5 +7,6 @@ export interface ScriptData {
     description: string;
     language: string;
     version: string;
+    "download-url"?: string;
+    "is-downloaded"?: boolean;
   }
-  

@@ -8,6 +8,7 @@ from socketserver import ThreadingMixIn
 # Constants
 PLUGIN_DIR = "/home/deck/homebrew/plugins/decky-script-runner"
 SCRIPTS_DIR = "/home/deck/homebrew/data/decky-script-runner/scripts"
+DOWNLOADED_SCRIPTS_DIR = SCRIPTS_DIR + "/downloaded"
 #SCRIPTS_DIR = "./uploads"  # Directory to store script files
 METADATA_FILE = os.path.join(SCRIPTS_DIR, "metadata.json")
 suported_script_langs = [".js", ".py", ".sh", ".lua", ".pl", ".php", ".rb"]
@@ -69,30 +70,34 @@ def compile_metadata():
         existing_metadata = {}
 
     metadata_list = []
-    for file_name in os.listdir(SCRIPTS_DIR):
-        file_path = os.path.join(SCRIPTS_DIR, file_name)
-        if [file_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
-            continue
-        if file_name.endswith('.json') or not os.path.isfile(file_path):
-            continue
+    def compile_path_files(base_path, is_downloaded=False):
+          for file_name in os.listdir(base_path):
+            file_path = os.path.join(base_path, file_name)
+            if [file_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
+                continue
+            if file_name.endswith('.json') or not os.path.isfile(file_path):
+                continue
 
-        # Get the last modification time of the file
-        mtime = os.path.getmtime(file_path)
+            # Get the last modification time of the file
+            mtime = os.path.getmtime(file_path)
 
-        # Check if we need to reparse metadata based on mtime
-        if (file_name in existing_metadata and
-            existing_metadata[file_name].get("mtime") == mtime):
-            # Use existing metadata entry if mtime matches
-            metadata_list.append(existing_metadata[file_name])
-        else:
-            # Parse metadata and add mtime if the file has been modified
-            metadata = parse_metadata(file_path)
-            metadata["name"] = file_name
-            metadata["mtime"] = mtime
-            metadata_list.append(metadata)
-        # Save the updated metadata list
-        with open(METADATA_FILE, 'w') as f:
-            json.dump(metadata_list, f, indent=4)
+            # Check if we need to reparse metadata based on mtime
+            if (file_name in existing_metadata and
+                existing_metadata[file_name].get("mtime") == mtime):
+                # Use existing metadata entry if mtime matches
+                metadata_list.append(existing_metadata[file_name])
+            else:
+                # Parse metadata and add mtime if the file has been modified
+                metadata = parse_metadata(file_path)
+                metadata["name"] = file_name
+                metadata["mtime"] = mtime
+                metadata["is-downloaded"] = is_downloaded
+                metadata_list.append(metadata)
+            # Save the updated metadata list
+            with open(METADATA_FILE, 'w') as f:
+                json.dump(metadata_list, f, indent=4)
+    compile_path_files(SCRIPTS_DIR)
+    compile_path_files(DOWNLOADED_SCRIPTS_DIR, True)
     return metadata_list
 
 class ScriptHandler(BaseHTTPRequestHandler):
@@ -123,6 +128,8 @@ class ScriptHandler(BaseHTTPRequestHandler):
         elif self.path.startswith("/script/"):
             file_name = self.path[len("/script/"):]  # Extract file name after "/script/"
             file_path = os.path.join(SCRIPTS_DIR, file_name)
+            if(not os.path.exists(file_path)):
+                file_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, file_name)
             if os.path.exists(file_path):
                 with open(file_path, 'r') as file:
                     file_content = file.read()
@@ -209,6 +216,8 @@ class ScriptHandler(BaseHTTPRequestHandler):
                 raise ValueError("File name is missing")
 
             file_path = os.path.join(SCRIPTS_DIR, file_name)
+            if(not os.path.exists(file_path)):
+                file_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, file_name)
             # Check if the file exists
             if not os.path.exists(file_path):
                 self.send_response(404)
@@ -237,6 +246,8 @@ class ScriptHandler(BaseHTTPRequestHandler):
         """Handle DELETE requests to remove a file and its metadata."""
         file_name = self.path.strip("/")
         file_path = os.path.join(SCRIPTS_DIR, file_name)
+        if(not os.path.exists(file_path)):
+            file_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, file_name)
         if os.path.exists(file_path):
             os.remove(file_path)
             self.send_response(200)

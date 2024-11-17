@@ -79,13 +79,13 @@ export const AboutPage = () => {
             title: "Star the repo",
             description: "Support this project",
             icon: <MdStar />,
-            url: "https://decky.netlify.app",
+            url: "https://github.com/Gr3gorywolf/decky-script-runner",
         },
         {
             title: "Want Publish your script?",
             description: "Contribute to our script repository and get it public",
             icon: <MdPeople />,
-            url: "https://decky.netlify.app",
+            url: "https://github.com/Gr3gorywolf/decky-script-runner-scripts",
         },
     ];
 

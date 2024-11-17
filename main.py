@@ -10,10 +10,11 @@ import threading
 import time
 # The decky plugin module is located at decky-loader/plugin
 import decky
-SCRIPTS_DIR = decky.DECKY_PLUGIN_RUNTIME_DIR + "/scripts"  # Directory to store files
 stop_event = asyncio.Event()
 # Ensure the upload directory exists
-os.makedirs(SCRIPTS_DIR, exist_ok=True)
+
+SCRIPTS_DIR = decky.DECKY_PLUGIN_RUNTIME_DIR + "/scripts"  # Directory to store files
+DOWNLOADED_SCRIPTS_DIR = SCRIPTS_DIR + "/downloaded"
 LOG_DIR = SCRIPTS_DIR + "/logs"
 # Path to the script that will act as the server
 SERVER_SCRIPT_PATH = decky.DECKY_PLUGIN_DIR + "/assets/script-loader-server.py"
@@ -24,6 +25,7 @@ SCRIPT_DATA_PATH = SCRIPTS_DIR +"/scripts-data"
 server_process = None
 running_scripts_map = {}
 os.makedirs(SCRIPTS_DIR, exist_ok=True)
+os.makedirs(DOWNLOADED_SCRIPTS_DIR, exist_ok=True)
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(SCRIPT_DATA_PATH, exist_ok=True)
 suported_script_langs = [".js", ".py", ".sh", ".lua", ".pl", ".php", ".rb"]
@@ -77,30 +79,34 @@ def compile_metadata():
         existing_metadata = {}
 
     metadata_list = []
-    for file_name in os.listdir(SCRIPTS_DIR):
-        file_path = os.path.join(SCRIPTS_DIR, file_name)
-        if [file_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
-            continue
-        if file_name.endswith('.json') or not os.path.isfile(file_path):
-            continue
+    def compile_path_files(base_path, is_downloaded=False):
+          for file_name in os.listdir(base_path):
+            file_path = os.path.join(base_path, file_name)
+            if [file_name.endswith(ext) for ext in suported_script_langs].count(True) == 0:
+                continue
+            if file_name.endswith('.json') or not os.path.isfile(file_path):
+                continue
 
-        # Get the last modification time of the file
-        mtime = os.path.getmtime(file_path)
+            # Get the last modification time of the file
+            mtime = os.path.getmtime(file_path)
 
-        # Check if we need to reparse metadata based on mtime
-        if (file_name in existing_metadata and
-            existing_metadata[file_name].get("mtime") == mtime):
-            # Use existing metadata entry if mtime matches
-            metadata_list.append(existing_metadata[file_name])
-        else:
-            # Parse metadata and add mtime if the file has been modified
-            metadata = parse_metadata(file_path)
-            metadata["name"] = file_name
-            metadata["mtime"] = mtime
-            metadata_list.append(metadata)
-        # Save the updated metadata list
-        with open(METADATA_FILE, 'w') as f:
-            json.dump(metadata_list, f, indent=4)
+            # Check if we need to reparse metadata based on mtime
+            if (file_name in existing_metadata and
+                existing_metadata[file_name].get("mtime") == mtime):
+                # Use existing metadata entry if mtime matches
+                metadata_list.append(existing_metadata[file_name])
+            else:
+                # Parse metadata and add mtime if the file has been modified
+                metadata = parse_metadata(file_path)
+                metadata["name"] = file_name
+                metadata["mtime"] = mtime
+                metadata["is-downloaded"] = is_downloaded
+                metadata_list.append(metadata)
+            # Save the updated metadata list
+            with open(METADATA_FILE, 'w') as f:
+                json.dump(metadata_list, f, indent=4)
+    compile_path_files(SCRIPTS_DIR)
+    compile_path_files(DOWNLOADED_SCRIPTS_DIR, True)
     return metadata_list
 
 def monitor_process_from_fd(master_fd,slave_fd,process, log_file_path):
@@ -151,6 +157,8 @@ class Plugin:
 
     async def get_script_content(self, script_name):
         script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if(not os.path.exists(script_path)):
+            script_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, script_name)
         if os.path.exists(script_path):
              with open(script_path, 'r') as file:
                   file_content = file.read()
@@ -160,6 +168,8 @@ class Plugin:
 
     async def save_script_content(self, script_name,content):
         script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if(not os.path.exists(script_path)):
+            script_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, script_name)
         if os.path.exists(script_path):
               with open(script_path, 'w') as file:
                   file.write(content)
@@ -179,6 +189,8 @@ class Plugin:
 
     async def delete_script(self, script_name):
         script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if(not os.path.exists(script_path)):
+            script_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, script_name)
         if os.path.exists(script_path):
             os.remove(script_path)
             compile_metadata()
@@ -190,6 +202,21 @@ class Plugin:
         new_script_path = os.path.join(SCRIPTS_DIR, new_script_name)
         if os.path.exists(script_path):
             os.rename(script_path, new_script_path)
+            compile_metadata()
+            return True
+        return False
+    ## Community scripts API
+    async def install_script(self, script_name, script_content):
+        script_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, script_name)
+        with open(script_path, 'w') as file:
+            file.write(script_content)
+        compile_metadata()
+        return True
+
+    async def uninstall_script(self, script_name):
+        script_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, script_name)
+        if os.path.exists(script_path):
+            os.remove(script_path)
             compile_metadata()
             return True
         return False
@@ -285,6 +312,8 @@ class Plugin:
     async def run_script(self, script_name, root_passwd=None):
         # Check if the script exists
         script_path = os.path.join(SCRIPTS_DIR, script_name)
+        if(not os.path.exists(script_path)):
+            script_path = os.path.join(DOWNLOADED_SCRIPTS_DIR, script_name)
         if not os.path.exists(script_path):
             return "Script not found"
 
