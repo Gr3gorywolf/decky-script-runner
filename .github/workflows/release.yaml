@@ -16,6 +16,8 @@ jobs:
       # Set up pnpm
       - name: Set up pnpm
         uses: pnpm/action-setup@v2
+        with:
+          version: '8.6.3'
 
       # Install dependencies
       - name: Install dependencies
