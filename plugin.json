@@ -1,11 +1,11 @@
 {
-  "name": "Decky Script Loader",
-  "author": "John Doe",
+  "name": "Decky Script Runner",
+  "author": "Gr3gorywolf",
   "flags": ["debug"],
   "api_version": 1,
   "publish": {
     "tags": ["scripting", "loader", "decky"],
-    "description": "A script loader for Decky that support multiple languages and formats.",
-    "image": "https://opengraph.githubassets.com/1/SteamDeckHomebrew/PluginLoader"
+    "description": "Run, manage, and edit scripts. With a focus on flexibility, it supports running multiple scripts simultaneously, editing and uploading script through the integrated sideloader, and sharing scripts within a community-driven repository, Also supports multiple scripting languages such as Javascript (Node),Bash, Python, Perl, Lua, Ruby and PHP, this plugin is a must-have for any Steam Deck user.",
+    "image": "https://github.com/user-attachments/assets/299b625e-ffd8-40cc-b0e2-de650ac8c462"
   }
 }

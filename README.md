@@ -1,103 +1,90 @@
-# Decky Plugin Template [![Chat](https://img.shields.io/badge/chat-on%20discord-7289da.svg)](https://deckbrew.xyz/discord)
+# Decky Script Runner Plugin  
 ![image](https://github.com/user-attachments/assets/299b625e-ffd8-40cc-b0e2-de650ac8c462)
 
+## Table of Contents  
+1. [Overview](#overview)  
+2. [Features](#features)  
+   - [Script Launcher](#script-launcher)  
+   - [SideLoader](#sideloader)  
+   - [Editing Scripts](#editing-scripts)  
+   - [Root Scripts](#root-scripts)  
+   - [Supported Languages](#supported-languages)  
+   - [Community Scripts](#community-scripts)  
+   - [Log Viewer](#log-viewer)  
+3. [Development](#development)  
+   - [Dependencies](#dependencies)  
+   - [Setting Up](#setting-up)  
+   - [Building and Testing](#building-and-testing)  
+   - [Distribution](#distribution)  
+4. [License](#license)  
 
-Reference example for using [decky-frontend-lib](https://github.com/SteamDeckHomebrew/decky-frontend-lib) (@decky/ui) in a [decky-loader](https://github.com/SteamDeckHomebrew/decky-loader) plugin.
+---
 
-### **Please also refer to the [wiki](https://wiki.deckbrew.xyz/en/user-guide/home#plugin-development) for important information on plugin development and submissions/updates. currently documentation is split between this README and the wiki which is something we are hoping to rectify in the future.**  
+## Overview  
+The **Decky Script Runner** is a plugin designed for the Steam Deck, offering a powerful environment to run, manage, and edit scripts. With a focus on flexibility, it supports running multiple scripts simultaneously, editing and uploading script through the integrated sideloader, and sharing scripts within a community-driven repository. Whether you're automating tasks or developing new scripts, this plugin is a must-have for any Steam Deck user.  
 
-## Developers
+---
 
-### Dependencies
+## Features  
 
-This template relies on the user having Node.js v16.14+ and `pnpm` (v9) installed on their system.  
-Please make sure to install pnpm v9 to prevent issues with CI during plugin submission.  
-`pnpm` can be downloaded from `npm` itself which is recommended.
+### Script Launcher  
+The plugin’s script launcher allows you to run multiple scripts simultaneously, enabling complex automation tasks such as hosting multiple web servers or handling various background processes. By default, scripts open a console for feedback but continue running in the background. You can disable the console view if you prefer a more streamlined experience.
 
-#### Linux
+### SideLoader  
+The **SideLoader** tool offers a built-in Monaco editor for creating, editing, and managing scripts directly on your Steam Deck. With a simple button press in the plugin’s menu, you can access the SideLoader, which also displays the IP address where it's running, enabling remote access for easy script management.
+
+### Editing Scripts  
+You can edit and manage your scripts using the SideLoader or directly by placing them in the `/home/deck/decky-scripts` folder. Scripts in this directory are automatically recognized by the plugin. For a clean and informative presentation, it’s recommended to add a metadata template to the top of each script.
+
+### Root Scripts  
+Some scripts may require root access to perform system-level tasks. These scripts are flagged with a `root: true` property in their metadata. Root scripts from the community are tested to ensure they don’t damage your device, but always exercise caution when using third-party root scripts.
+
+### Supported Languages  
+The Decky Script Runner currently supports the following languages:  
+- ![JavaScript](path/to/javascript-icon) **JavaScript (Node.js)**  
+- ![Python](path/to/python-icon) **Python**  
+- ![Lua](path/to/lua-icon) **Lua**  
+- ![Perl](path/to/perl-icon) **Perl**  
+- ![PHP](path/to/php-icon) **PHP**  
+- ![Bash](path/to/bash-icon) **Bash**  
+- ![Ruby](path/to/ruby-icon) **Ruby**  
+
+If you’d like to request support for additional languages, open an issue and it may be considered in a future update.
+
+### Community Scripts  
+Users can share their scripts with the community by contributing to the [community repository](https://github.com/Gr3gorywolf/decky-script-runner-scripts). Once approved, these scripts are immediately available to others, helping to build a collaborative environment for all users.
+
+### Log Viewer  
+The **Log Viewer** provides real-time feedback on script outputs, making it easier to debug and monitor script execution. This tool is also accessible through the SideLoader for seamless integration.
+
+---
+
+## Development  
+
+### Dependencies  
+To develop and test plugins, you need to have **Node.js v16.14+** and **pnpm v9** installed. This is required to avoid CI issues during plugin submission. You can install pnpm via npm with the following command:  
 
 ```bash
 sudo npm i -g pnpm@9
 ```
 
-If you would like to build plugins that have their own custom backends, Docker is required as it is used by the Decky CLI tool.
+For custom backends, Docker is also required for compatibility with the Decky CLI tool.  
 
-### Making your own plugin
+### Setting Up  
+To get started with plugin development, either fork this repository or use the "Use this template" button on GitHub. After that, run the following commands in your local repository:  
+1. `pnpm i`  
+2. `pnpm run build`  
 
-1. You can fork this repo or utilize the "Use this template" button on Github.
-2. In your local fork/own plugin-repository run these commands:
-   1. ``pnpm i``
-   2. ``pnpm run build``
-   - These setup pnpm and build the frontend code for testing.
-3. Consult the [decky-frontend-lib](https://github.com/SteamDeckHomebrew/decky-frontend-lib) repository for ways to accomplish your tasks.
-   - Documentation and examples are still rough, 
-   - Decky loader primarily targets Steam Deck hardware so keep this in mind when developing your plugin.
-4. If using VSCodium/VSCode, run the `setup` and `build` and `deploy` tasks. If not using VSCodium etc. you can derive your own makefile or just manually utilize the scripts for these commands as you see fit.
+These commands will install dependencies and build the frontend code for testing.  
 
-If you use VSCode or it's derivatives (we suggest [VSCodium](https://vscodium.com/)!) just run the `setup` and `build` tasks. It's really that simple.
+### Building and Testing  
+You can reference the [decky-frontend-lib](https://github.com/SteamDeckHomebrew/decky-frontend-lib) for additional resources on how to develop your plugin. If using VSCode or VSCodium, simply run the `setup` and `build` tasks to compile and deploy your plugin.  
 
-#### Other important information
+If you’re not using VSCode, manually execute the build process as needed.
 
-Everytime you change the frontend code (`index.tsx` etc) you will need to rebuild using the commands from step 2 above or the build task if you're using vscode or a derivative.
+### Distribution  
+To distribute your plugin, you can either publish it on the [decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-plugin-database) or package it in a ZIP file. The ZIP should include the necessary files, including `index.js`, `package.json`, and `plugin.json`.  
 
-Note: If you are receiving build errors due to an out of date library, you should run this command inside of your repository:
+For distribution through the plugin store, you must include a license file in your repository. For more information on distribution and CI setup, refer to the [decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-plugin-database).
 
-```bash
-pnpm update @decky/ui --latest
-```
 
-### Backend support
-
-If you are developing with a backend for a plugin and would like to submit it to the [decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-plugin-database) you will need to have all backend code located in ``backend/src``, with backend being located in the root of your git repository.
-When building your plugin, the source code will be built and any finished binary or binaries will be output to ``backend/out`` (which is created during CI.)
-If your buildscript, makefile or any other build method does not place the binary files in the ``backend/out`` directory they will not be properly picked up during CI and your plugin will not have the required binaries included for distribution.
-
-Example:  
-In our makefile used to demonstrate the CI process of building and distributing a plugin backend, note that the makefile explicitly creates the `out` folder (``backend/out``) and then compiles the binary into that folder. Here's the relevant snippet.
-
-```make
-hello:
-	mkdir -p ./out
-	gcc -o ./out/hello ./src/main.c
-```
-
-The CI does create the `out` folder itself but we recommend creating it yourself if possible during your build process to ensure the build process goes smoothly.
-
-Note: When locally building your plugin it will be placed into a folder called 'out' this is different from the concept described above.
-
-The out folder is not sent to the final plugin, but is then put into a ``bin`` folder which is found at the root of the plugin's directory.  
-More information on the bin folder can be found below in the distribution section below.
-
-### Distribution
-
-We recommend following the instructions found in the [decky-plugin-database](https://github.com/SteamDeckHomebrew/decky-plugin-database) on how to get your plugin up on the plugin store. This is the best way to get your plugin in front of users.
-You can also choose to do distribution via a zip file containing the needed files, if that zip file is uploaded to a URL it can then be downloaded and installed via decky-loader.
-
-**NOTE: We do not currently have a method to install from a downloaded zip file in "game-mode" due to lack of a usable file-picking dialog.**
-
-Layout of a plugin zip ready for distribution:
-```
-pluginname-v1.0.0.zip (version number is optional but recommended for users sake)
-   |
-   pluginname/ <directory>
-   |  |  |
-   |  |  bin/ <directory> (optional)
-   |  |     |
-   |  |     binary (optional)
-   |  |
-   |  dist/ <directory> [required]
-   |      |
-   |      index.js [required]
-   | 
-   package.json [required]
-   plugin.json [required]
-   main.py {required if you are using the python backend of decky-loader: serverAPI}
-   README.md (optional but recommended)
-   LICENSE(.md) [required, filename should be roughly similar, suffix not needed]
-```
-
-Note regarding licenses: Including a license is required for the plugin store if your chosen license requires the license to be included alongside usage of source-code/binaries!
-
-Standard procedure for licenses is to have your chosen license at the top of the file, and to leave the original license for the plugin-template at the bottom. If this is not the case on submission to the plugin database, you will be asked to fix this discrepancy.
-
-We cannot and will not distribute your plugin on the Plugin Store if it's license requires it's inclusion but you have not included a license to be re-distributed with your plugin in the root of your git repository.

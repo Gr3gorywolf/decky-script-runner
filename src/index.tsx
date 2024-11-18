@@ -9,7 +9,7 @@ import {
 } from "@decky/ui";
 import { addEventListener, removeEventListener, definePlugin, toaster, call, routerHook } from "@decky/api";
 import { useEffect, useState } from "react";
-import { MdCode, MdSettings, MdSyncAlt, MdStorefront, MdInfo, MdAdd } from "react-icons/md";
+import { MdCode, MdSettings, MdSyncAlt, MdStorefront, MdInfo, MdAdd, MdQuestionMark } from "react-icons/md";
 import { ScriptData } from "./types/script-data";
 import { ScriptCard } from "./components/ScriptCard";
 import { SideloaderAlert } from "./components/SideloaderAlert";
@@ -40,8 +40,8 @@ function Content() {
         Navigation.Navigate("/decky-script-runner/settings");
     };
 
-    const handleGoToAbout = () => {
-        Navigation.Navigate("/decky-script-runner/about");
+    const handleOpenHelp = () => {
+        window.open(`steam://openurl/${"https://github.com/Gr3gorywolf/decky-script-runner/wiki/Guide"}`, "_blank");
     };
 
     const handleGoToStore = () =>{
@@ -138,9 +138,9 @@ function Content() {
                             </DialogButton>
                             <DialogButton
                                 style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}
-                                onClick={handleGoToAbout}
+                                onClick={handleOpenHelp}
                             >
-                                <MdInfo />
+                                <MdQuestionMark />
                             </DialogButton>
                         </Focusable>
                     </PanelSectionRow>

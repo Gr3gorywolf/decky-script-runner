@@ -73,7 +73,7 @@ export const AboutPage = () => {
             title: "Need help?",
             description: "Read the official guide",
             icon: <MdQuestionMark />,
-            url: "https://decky.netlify.app",
+            url: "https://github.com/Gr3gorywolf/decky-script-runner/wiki/Guide",
         },
         {
             title: "Star the repo",

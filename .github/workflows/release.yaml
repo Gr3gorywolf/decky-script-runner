@@ -1,0 +1,57 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Trigger on tag pushes, e.g., v1.0.0
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up pnpm
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v2
+
+      # Install dependencies
+      - name: Install dependencies
+        run: pnpm install
+
+      # Run build
+      - name: Build project
+        run: pnpm run build
+
+      # Create release zip
+      - name: Create release zip
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          RELEASE_NAME="decky-script-runner-v${VERSION}.zip"
+          mkdir -p decky-script-runner
+          cp -r dist assets package.json plugin.json main.py README.md LICENSE decky-script-runner/
+          zip -r $RELEASE_NAME decky-script-runner
+          mv $RELEASE_NAME $GITHUB_WORKSPACE
+
+      # Upload release artifact
+      - name: Upload release artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: release
+          path: decky-script-runner-v*.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout the code again
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Create a GitHub Release and upload the zip file
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: decky-script-runner-v*.zip
