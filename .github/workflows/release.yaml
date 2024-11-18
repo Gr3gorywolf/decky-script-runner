@@ -43,7 +43,7 @@ jobs:
       - name: Upload release artifact
         uses: actions/upload-artifact@v3
         with:
-          name: release
+          name: decky-script-runner
           path: decky-script-runner-v*.zip
 
   release:
@@ -59,4 +59,4 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           tag: v1.0.0-${{ github.run_number }}
-          artifacts: decky-script-runner-v*.zip
+          artifacts: decky-script-runner
