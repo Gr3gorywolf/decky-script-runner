@@ -45,18 +45,9 @@ jobs:
         with:
           name: decky-script-runner
           path: decky-script-runner-v*.zip
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      # Checkout the code again
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
       # Create a GitHub Release and upload the zip file
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           tag: v1.0.0-${{ github.run_number }}
-          artifacts: decky-script-runner
+          artifacts: decky-script-runner-v*.zip
