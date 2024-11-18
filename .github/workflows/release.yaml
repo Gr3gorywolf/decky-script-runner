@@ -27,6 +27,9 @@ jobs:
       - name: Build project
         run: pnpm run build
 
+      - name: Delete .map files in dist folder
+        run: find dist/ -name "*.map" -type f -delete
+
       # Create release zip
       - name: Create release zip
         run: |
@@ -53,6 +56,7 @@ jobs:
 
       # Create a GitHub Release and upload the zip file
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: ncipollo/release-action@v1
         with:
-          files: decky-script-runner-v*.zip
+          tag: v1.0.0-${{ github.run_number }}
+          artifacts: decky-script-runner-v*.zip
