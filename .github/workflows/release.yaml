@@ -35,7 +35,6 @@ jobs:
           mkdir -p decky-script-runner
           cp -r dist assets package.json plugin.json main.py README.md LICENSE decky-script-runner/
           zip -r $RELEASE_NAME decky-script-runner
-          mv $RELEASE_NAME $GITHUB_WORKSPACE
 
       # Upload release artifact
       - name: Upload release artifact
