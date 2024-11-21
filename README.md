@@ -41,18 +41,23 @@ Some scripts may require root access to perform system-level tasks. These script
 
 ### Supported Languages  
 The Decky Script Runner currently supports the following languages:  
-- ![JavaScript](path/to/javascript-icon) **JavaScript (Node.js)**  
-- ![Python](path/to/python-icon) **Python**  
-- ![Lua](path/to/lua-icon) **Lua**  
-- ![Perl](path/to/perl-icon) **Perl**  
-- ![PHP](path/to/php-icon) **PHP**  
-- ![Bash](path/to/bash-icon) **Bash**  
-- ![Ruby](path/to/ruby-icon) **Ruby**  
+- <img height="15px" width="15px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" />  **JavaScript (Node.js)**  
+- <img height="15px" width="15px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/python/python-original.svg" /> **Python**  
+- <img height="15px" width="15px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/lua/lua-original.svg" /> **Lua**  
+- <img height="15px" width="15px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/perl/perl-original.svg" /> **Perl**  
+- <img height="15px" width="15px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/php/php-original.svg" /> **PHP**  
+- <img height="15px" width="15px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/bash/bash-original.svg" /> **Bash**  
+- <img height="15px" width="15px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/ruby/ruby-original.svg" /> **Ruby**  
 
 If you’d like to request support for additional languages, open an issue and it may be considered in a future update.
 
 ### Community Scripts  
 Users can share their scripts with the community by contributing to the [community repository](https://github.com/Gr3gorywolf/decky-script-runner-scripts). Once approved, these scripts are immediately available to others, helping to build a collaborative environment for all users.
+> ⚠️ **Warning**  
+> 1. Some scripts require root and unlock the Steam Deck filesystem. In those cases, we are not responsible for Steam Deck damages. (Verify the code before running them)  
+> 2. Decky is not responsible for anything done by the script runner since the plugin was made just for running scripts. Any script that you run will be at your own risk.  
+> 3. We are not responsible for any damages done by a script run on this plugin.
+
 
 ### Log Viewer  
 The **Log Viewer** provides real-time feedback on script outputs, making it easier to debug and monitor script execution. This tool is also accessible through the SideLoader for seamless integration.
