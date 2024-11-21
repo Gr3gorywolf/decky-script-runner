@@ -55,8 +55,7 @@ If you’d like to request support for additional languages, open an issue and i
 Users can share their scripts with the community by contributing to the [community repository](https://github.com/Gr3gorywolf/decky-script-runner-scripts). Once approved, these scripts are immediately available to others, helping to build a collaborative environment for all users.
 > ⚠️ **Warning**  
 > 1. Some scripts require root and unlock the Steam Deck filesystem. In those cases, we are not responsible for Steam Deck damages. (Verify the code before running them)  
-> 2. Decky is not responsible for anything done by the script runner since the plugin was made just for running scripts. Any script that you run will be at your own risk.  
-> 3. We are not responsible for any damages done by a script run on this plugin.
+> 2. Neither the Plugin or Developer are responsible for anything done by the script runner since the plugin was made just for running scripts. Any script that you run will be at your own risk.
 
 
 ### Log Viewer  

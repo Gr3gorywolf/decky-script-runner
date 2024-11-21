@@ -79,12 +79,8 @@ export const CommunityScriptsInfo = () => {
                     </li>
                     <li style={listItemStyle}>
                         <span style={bulletPointStyle}>•</span>
-                        Decky is not responsible for anything done by the script runner since the plugin was made just
+                        Neither the Plugin or Developer are responsible for anything done by the script runner since the plugin was made just
                         for running scripts. Any script that you run will be at your own risk.
-                    </li>
-                    <li style={listItemStyle}>
-                        <span style={bulletPointStyle}>•</span>
-                        We are not responsible for any damages done by a script run on this plugin.
                     </li>
                 </ol>
             </div>
