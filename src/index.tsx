@@ -9,7 +9,7 @@ import {
 } from "@decky/ui";
 import { addEventListener, removeEventListener, definePlugin, toaster, call, routerHook } from "@decky/api";
 import { useEffect, useState } from "react";
-import { MdCode, MdSettings, MdSyncAlt, MdStorefront, MdInfo, MdAdd, MdQuestionMark } from "react-icons/md";
+import { MdCode, MdSettings, MdSyncAlt, MdAdd, MdQuestionMark, MdGroups } from "react-icons/md";
 import { ScriptData } from "./types/script-data";
 import { ScriptCard } from "./components/ScriptCard";
 import { SideloaderAlert } from "./components/SideloaderAlert";
@@ -128,7 +128,7 @@ function Content() {
                                 style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}
                                 onClick={handleGoToStore}
                             >
-                                <MdStorefront />
+                                <MdGroups />
                             </DialogButton>
                             <DialogButton
                                 style={{ minWidth: 0, width: "15%", height: "28px", padding: "6px" }}

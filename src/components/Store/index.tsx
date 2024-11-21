@@ -1,65 +1,62 @@
-import { Focusable, SteamSpinner } from "@decky/ui";
-import { useEffect, useState } from "react";
-import { MdStorefront } from "react-icons/md";
-import { ScriptData } from "../../types/script-data";
-import { StoreScriptCard } from "./components/StoreScriptCard";
-import { call, fetchNoCors, toaster } from "@decky/api";
+import { Focusable} from "@decky/ui";
+import { MdGroups } from "react-icons/md";
+import { CommunityScriptsInfo } from "./components/CommunityScriptsInfo";
 
 export const StorePage = () => {
-    const [isLoading, setIsLoading] = useState(false);
-    const [localScripts, setLocalScripts] = useState<ScriptData[]>([]);
-    const [scripts, setScripts] = useState<ScriptData[]>([]);
+    // const [isLoading, setIsLoading] = useState(false);
+    // const [localScripts, setLocalScripts] = useState<ScriptData[]>([]);
+    // const [scripts, setScripts] = useState<ScriptData[]>([]);
 
-    const fetchCommunityScripts = async () => {
-        setIsLoading(true);
-        const response = await fetchNoCors(
-            "https://github.com/Gr3gorywolf/decky-script-runner-scripts/releases/latest/download/store-metadata.json"
-        );
-        const data = await response.json();
-        setScripts(data);
-        setIsLoading(false);
-    };
+    // const fetchCommunityScripts = async () => {
+    //     setIsLoading(true);
+    //     const response = await fetchNoCors(
+    //         "https://github.com/Gr3gorywolf/decky-script-runner-scripts/releases/latest/download/store-metadata.json"
+    //     );
+    //     const data = await response.json();
+    //     setScripts(data);
+    //     setIsLoading(false);
+    // };
 
-    const fetchLocalScripts = async () => {
-        let scriptsData = await call<[], string>("get_scripts_data");
-        setLocalScripts(JSON.parse(scriptsData));
-    };
+    // const fetchLocalScripts = async () => {
+    //     let scriptsData = await call<[], string>("get_scripts_data");
+    //     setLocalScripts(JSON.parse(scriptsData));
+    // };
 
-    const getDownloadedScript = (storeScript: ScriptData) => {
-        const scriptName = `[${storeScript.author}]${storeScript.name}`;
-        return localScripts.find((script) => script.name === scriptName && script["is-downloaded"]);
-    };
+    // const getDownloadedScript = (storeScript: ScriptData) => {
+    //     const scriptName = `[${storeScript.author}]${storeScript.name}`;
+    //     return localScripts.find((script) => script.name === scriptName && script["is-downloaded"]);
+    // };
 
-    const handleDownload = async (data: ScriptData) => {
-        const response = await fetchNoCors(data["download-url"] ?? "");
-        const content = await response.text();
-        const scriptName = `[${data.author}]${data.name}`;
-        const created = await call<[string, string], boolean>("install_script", scriptName, content);
-        if (created) {
-            toaster.toast({
-                title: "Script installed!",
-                body: `The script ${data.name} has been installed`,
-            });
-            fetchLocalScripts();
-        }
-    };
+    // const handleDownload = async (data: ScriptData) => {
+    //     const response = await fetchNoCors(data["download-url"] ?? "");
+    //     const content = await response.text();
+    //     const scriptName = `[${data.author}]${data.name}`;
+    //     const created = await call<[string, string], boolean>("install_script", scriptName, content);
+    //     if (created) {
+    //         toaster.toast({
+    //             title: "Script installed!",
+    //             body: `The script ${data.name} has been installed`,
+    //         });
+    //         fetchLocalScripts();
+    //     }
+    // };
 
-    const handleDelete = async (data: ScriptData) => {
-        const scriptName = `[${data.author}]${data.name}`;
-        const deleted = await call<[string], boolean>("uninstall_script", scriptName);
-        if (deleted) {
-            toaster.toast({
-                title: "Script uninstalled!",
-                body: `The script ${data.name} has been uninstalled installed`,
-            });
-            fetchLocalScripts();
-        }
-    };
+    // const handleDelete = async (data: ScriptData) => {
+    //     const scriptName = `[${data.author}]${data.name}`;
+    //     const deleted = await call<[string], boolean>("uninstall_script", scriptName);
+    //     if (deleted) {
+    //         toaster.toast({
+    //             title: "Script uninstalled!",
+    //             body: `The script ${data.name} has been uninstalled installed`,
+    //         });
+    //         fetchLocalScripts();
+    //     }
+    // };
 
-    useEffect(() => {
-        fetchCommunityScripts();
-        fetchLocalScripts();
-    }, []);
+    // useEffect(() => {
+    //     fetchCommunityScripts();
+    //     fetchLocalScripts();
+    // }, []);
 
     return (
         <Focusable style={{ minWidth: "100%", minHeight: "100%" }}>
@@ -67,6 +64,7 @@ export const StorePage = () => {
                 style={{
                     marginTop: "40px",
                     height: "calc(100% - 40px)",
+                    overflowY: "auto",
                 }}
             >
                 <div
@@ -84,7 +82,7 @@ export const StorePage = () => {
                             gap: "12px",
                         }}
                     >
-                        <MdStorefront size={24} color="#3B82F6" />
+                        <MdGroups size={24} color="#3B82F6" />
                         <h1
                             style={{
                                 color: "#ffffff",
@@ -106,7 +104,8 @@ export const StorePage = () => {
                         }}
                     />
                 </div>
-                {isLoading ? (
+                <CommunityScriptsInfo/>
+                {/* {isLoading ? (
                     <SteamSpinner background="transparent">Loading plugins</SteamSpinner>
                 ) : (
                     <div
@@ -132,7 +131,7 @@ export const StorePage = () => {
                             />
                         ))}
                     </div>
-                )}
+                )} */}
             </div>
         </Focusable>
     );

@@ -1,14 +1,19 @@
 import { GeneralSettings } from "./pages/GeneralSettings";
 import { AboutPage } from "./pages/AboutPage";
 import { Focusable, Tabs } from "@decky/ui";
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 
 interface props{
     initialTab?: string;
 }
 
 export const SettingsPage:FC<props> = ({initialTab}) => {
-    const [currentTab, setCurrentTab] = useState<string>(initialTab ?? "general-settings");
+    const [currentTab, setCurrentTab] = useState<string>("general-settings");
+    useEffect(()=>{
+        setTimeout(() => {
+            setCurrentTab(initialTab ?? "general-settings");
+        }, 60);
+    },[initialTab])
     const tabs = [
         {
             title: "General settings",

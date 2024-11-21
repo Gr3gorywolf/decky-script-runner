@@ -2,7 +2,7 @@ import { FC, useState } from "react";
 import { ScriptData } from "../../../types/script-data";
 import { getFullLanguageName } from "../../../utils/helpers";
 import { ImageByLanguage } from "../../ImageByLanguage";
-import { MdDelete, MdDownload, MdRemove, MdUpgrade } from "react-icons/md";
+import { MdDelete, MdDownload, MdUpgrade } from "react-icons/md";
 import { Focusable, DialogButton } from "@decky/ui";
 
 interface props {
